@@ -1,1 +1,53 @@
 @import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-brand-primary: #59399E;
+  --color-brand-primary-lightest: #EEECFB;
+  --color-brand-primary-light: #AB9DE8;
+  --color-brand-primary-dark: #3A2666;
+  --color-brand-primary-darkest: #221540;
+  --color-brand-secondary: #A6CD15;
+  --color-brand-secondary-lightest: #F5FCCB;
+  --color-brand-secondary-light: #D9F363;
+  --color-brand-secondary-dark: #50660C;
+  --color-brand-secondary-darkest: #33400F;
+
+  /* Neutral */
+  --color-neutral-white: #FFFFFF;
+  --color-neutral-bg: #F5F5FA;
+  --color-neutral-lightest: #E9E9F2;
+  --color-neutral-light: #BBB8CC;
+  --color-neutral-medium: #79778C;
+  --color-neutral-dark: #444152;
+  --color-neutral-darkest: #201F26;
+
+  /* Status */
+  --color-status-error-light: #FDE3E3;
+  --color-status-error: #E94A4A;
+  --color-status-error-dark: #7C2020;
+  --color-status-success-light: #EDFDF1;
+  --color-status-success: #268041;
+  --color-status-success-dark: #175028;
+  --color-status-warning-light: #FDF6C8;
+  --color-status-warning: #F1AF0F;
+  --color-status-warning-dark: #763D11;
+  --color-status-info-light: #D5F7F8;
+  --color-status-info: #3DE4F5;
+  --color-status-info-dark: #1A3D47;
+
+  /* Typography */
+  --font-heading: "Red Hat Display", sans-serif;
+  --font-body: "Roboto", sans-serif;
+
+  /* Shadows */
+  --shadow-level-1: 0px 1px 4px #9190a014;
+  --shadow-level-2: 0px 4px 12px #9190a014;
+  --shadow-level-3: 0px 8px 32px #201f2633;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-neutral-darkest);
+  background-color: var(--color-neutral-bg);
+}

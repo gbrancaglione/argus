@@ -1,9 +1,13 @@
-function App() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <h1 className="text-4xl font-bold text-gray-900">Argus</h1>
-    </div>
-  )
-}
+import { Routes, Route, Navigate } from "react-router-dom";
+import SignIn from "./pages/SignIn";
+import Dashboard from "./pages/Dashboard";
 
-export default App
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/" element={<Dashboard />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
