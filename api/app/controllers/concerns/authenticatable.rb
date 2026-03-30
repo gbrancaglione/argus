@@ -9,7 +9,7 @@ module Authenticatable
 
   def current_user
     @current_user ||= begin
-      token = request.headers["Authorization"]&.split(" ")&.last
+      token = cookies[:jwt] || request.headers["Authorization"]&.split(" ")&.last
       payload = JsonWebToken.decode(token) if token
       User.find_by(id: payload[:user_id]) if payload
     end

@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   namespace :api do
-    resource :session, only: [:create]
+    resource :session, only: [:create, :destroy]
     resource :dashboard, only: [:show]
   end
 end

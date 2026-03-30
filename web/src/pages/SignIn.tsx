@@ -45,7 +45,6 @@ export default function SignIn() {
             placeholder="your@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={error && !password ? error : undefined}
             autoComplete="email"
           />
 

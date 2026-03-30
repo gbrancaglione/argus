@@ -7,7 +7,6 @@ type User = {
 };
 
 type AuthState = {
-  token: string | null;
   user: User | null;
   isAuthenticated: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -16,37 +15,42 @@ type AuthState = {
 
 const AuthContext = createContext<AuthState | null>(null);
 
-const TOKEN_KEY = "argus_token";
 const USER_KEY = "argus_user";
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem(TOKEN_KEY));
-  const [user, setUser] = useState<User | null>(() => {
+function loadStoredUser(): User | null {
+  try {
     const stored = localStorage.getItem(USER_KEY);
     return stored ? JSON.parse(stored) : null;
-  });
+  } catch {
+    localStorage.removeItem(USER_KEY);
+    return null;
+  }
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(loadStoredUser);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const data = await apiRequest<{ token: string; user: User }>("/session", {
+    const data = await apiRequest<{ user: User }>("/session", {
       method: "POST",
       body: { email, password },
     });
 
-    localStorage.setItem(TOKEN_KEY, data.token);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-    setToken(data.token);
     setUser(data.user);
   }, []);
 
-  const signOut = useCallback(() => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
-    setUser(null);
+  const signOut = useCallback(async () => {
+    try {
+      await apiRequest("/session", { method: "DELETE" });
+    } finally {
+      localStorage.removeItem(USER_KEY);
+      setUser(null);
+    }
   }, []);
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated: !!token, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
