@@ -38,6 +38,8 @@ module Api
 
     private
 
+    MAX_PAGES = 20
+
     def fetch_all_transactions(account_id:, from:, to:)
       all = []
       page = 1
@@ -47,7 +49,7 @@ module Api
           page: page, page_size: 500
         )
         all.concat(data["results"])
-        break if page >= data["totalPages"]
+        break if page >= data["totalPages"] || page >= MAX_PAGES
         page += 1
       end
       all
@@ -75,7 +77,7 @@ module Api
     end
 
     def to_br_time(iso_string)
-      Time.parse(iso_string).in_time_zone("America/Sao_Paulo")
+      Time.zone.parse(iso_string)
     end
   end
 end

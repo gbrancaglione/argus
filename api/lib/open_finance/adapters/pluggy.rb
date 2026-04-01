@@ -36,7 +36,7 @@ module OpenFinance
         request["X-API-KEY"] = api_key
         request["Content-Type"] = "application/json"
 
-        response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+        response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 30) do |http|
           http.request(request)
         end
 
@@ -69,7 +69,7 @@ module OpenFinance
           clientSecret: ENV.fetch("PLUGGY_CLIENT_SECRET")
         }.to_json
 
-        response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) do |http|
+        response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true, open_timeout: 10, read_timeout: 30) do |http|
           http.request(request)
         end
 

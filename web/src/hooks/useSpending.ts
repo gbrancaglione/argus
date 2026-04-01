@@ -25,7 +25,18 @@ export function useSpending() {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
-  const loadData = useCallback((accountId: string, from: string, to: string, pg: number) => {
+  const loadTransactions = useCallback((accountId: string, from: string, to: string, pg: number) => {
+    setLoading(true);
+    fetchTransactions({ accountId, from, to, page: pg, pageSize: 50 })
+      .then((txData) => {
+        setTransactions(txData.results);
+        setTotalPages(txData.totalPages);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const loadAll = useCallback((accountId: string, from: string, to: string, pg: number) => {
     setLoading(true);
     setError(null);
 
@@ -44,17 +55,17 @@ export function useSpending() {
 
   const init = useCallback(() => {
     if (ready) return;
-    setReady(true);
     setLoading(true);
 
     fetchAccounts()
       .then((data) => {
+        setReady(true);
         setAccounts(data.results);
         const firstId = data.results[0]?.id ?? "";
         setAccountId(firstId);
         if (firstId) {
           const range = getDefaultRange();
-          loadData(firstId, range.from, range.to, 1);
+          loadAll(firstId, range.from, range.to, 1);
         } else {
           setLoading(false);
         }
@@ -63,24 +74,24 @@ export function useSpending() {
         setError(err.message);
         setLoading(false);
       });
-  }, [ready, loadData]);
+  }, [ready, loadAll]);
 
   const setSelectedAccountId = useCallback((accountId: string) => {
     setAccountId(accountId);
     setPageNum(1);
-    loadData(accountId, dateRange.from, dateRange.to, 1);
-  }, [loadData, dateRange]);
+    loadAll(accountId, dateRange.from, dateRange.to, 1);
+  }, [loadAll, dateRange]);
 
   const setRange = useCallback((from: string, to: string) => {
     setDateRange({ from, to });
     setPageNum(1);
-    loadData(selectedAccountId, from, to, 1);
-  }, [loadData, selectedAccountId]);
+    loadAll(selectedAccountId, from, to, 1);
+  }, [loadAll, selectedAccountId]);
 
   const setPage = useCallback((newPage: number) => {
     setPageNum(newPage);
-    loadData(selectedAccountId, dateRange.from, dateRange.to, newPage);
-  }, [loadData, selectedAccountId, dateRange]);
+    loadTransactions(selectedAccountId, dateRange.from, dateRange.to, newPage);
+  }, [loadTransactions, selectedAccountId, dateRange]);
 
   return {
     accounts,
