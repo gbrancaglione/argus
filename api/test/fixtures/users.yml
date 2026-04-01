@@ -1,0 +1,7 @@
+admin:
+  email: admin@argus.com
+  password_digest: <%= BCrypt::Password.create("password123") %>
+
+other:
+  email: other@argus.com
+  password_digest: <%= BCrypt::Password.create("secret456") %>
