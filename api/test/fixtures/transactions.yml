@@ -1,0 +1,69 @@
+grocery_expense:
+  account: santander_credit
+  external_id: "tx-1"
+  date: "2026-03-15"
+  amount: 150.00
+  amount_brl: 150.00
+  currency_code: "BRL"
+  description: "Supermercado Extra"
+  original_category: "Groceries"
+  category: "Groceries"
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+restaurant_expense:
+  account: santander_credit
+  external_id: "tx-2"
+  date: "2026-03-16"
+  amount: 85.50
+  amount_brl: 85.50
+  currency_code: "BRL"
+  description: "Restaurante Fasano"
+  original_category: "Food and drinks"
+  category: "Alimentação"
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+card_payment:
+  account: santander_credit
+  external_id: "tx-3"
+  date: "2026-03-20"
+  amount: -1500.00
+  amount_brl: -1500.00
+  currency_code: "BRL"
+  description: "Pagamento de fatura"
+  original_category: "Credit card payment"
+  category: "Credit card payment"
+  transaction_type: "CREDIT"
+  status: "POSTED"
+  raw_data: {}
+
+foreign_expense:
+  account: santander_credit
+  external_id: "tx-4"
+  date: "2026-03-18"
+  amount: 50.00
+  amount_brl: 280.00
+  currency_code: "USD"
+  description: "Amazon.com"
+  original_category: "Shopping"
+  category: "Shopping"
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+other_user_tx:
+  account: other_user_credit
+  external_id: "tx-5"
+  date: "2026-03-15"
+  amount: 200.00
+  amount_brl: 200.00
+  currency_code: "BRL"
+  description: "Uber"
+  original_category: "Transportation"
+  category: "Transportation"
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}

@@ -1,0 +1,32 @@
+santander_credit:
+  user: admin
+  external_id: "acc-credit-1"
+  item_id: "item-1"
+  name: "Cartão Santander"
+  account_type: "CREDIT"
+  account_subtype: "CREDIT_CARD"
+  currency_code: "BRL"
+  balance: 1500.00
+  raw_data: {}
+
+santander_checking:
+  user: admin
+  external_id: "acc-bank-1"
+  item_id: "item-1"
+  name: "Conta Corrente Santander"
+  account_type: "BANK"
+  account_subtype: "CHECKING_ACCOUNT"
+  currency_code: "BRL"
+  balance: 5000.00
+  raw_data: {}
+
+other_user_credit:
+  user: other
+  external_id: "acc-credit-2"
+  item_id: "item-2"
+  name: "Cartão BTG"
+  account_type: "CREDIT"
+  account_subtype: "CREDIT_CARD"
+  currency_code: "BRL"
+  balance: 800.00
+  raw_data: {}
