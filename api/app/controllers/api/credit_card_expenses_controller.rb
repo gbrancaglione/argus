@@ -1,5 +1,7 @@
 module Api
   class CreditCardExpensesController < ApplicationController
+    include TransactionSerialization
+
     before_action :authenticate!
 
     def index
@@ -15,7 +17,7 @@ module Api
       transactions = base.offset((page_num - 1) * per_page).limit(per_page)
 
       render json: {
-        results: transactions.map { |t| serialize(t) },
+        results: transactions.map { |t| serialize_transaction(t) },
         page: page_num,
         total: total,
         total_pages: [total_pages, 1].max
@@ -31,6 +33,11 @@ module Api
         .expenses
 
       brl_sum = "COALESCE(amount_brl, amount)"
+
+      stats = expenses
+        .reorder("")
+        .select(Arel.sql("SUM(#{brl_sum}) as total_spent, COUNT(*) as transaction_count"))
+        .take
 
       monthly = expenses
         .group(Arel.sql("TO_CHAR(date, 'YYYY-MM')"))
@@ -48,8 +55,8 @@ module Api
         .order(Arel.sql("SUM(#{brl_sum}) DESC"))
 
       render json: {
-        total_spent: expenses.sum(Arel.sql(brl_sum)).to_f.round(2),
-        transaction_count: expenses.count,
+        total_spent: (stats.total_spent || 0).to_f.round(2),
+        transaction_count: stats.transaction_count || 0,
         monthly: monthly.to_h { |r| [r.month, { spent: r.spent.to_f.round(2), count: r.count }] },
         daily: daily.to_h { |r| [r.date.to_s, { spent: r.spent.to_f.round(2), count: r.count }] },
         by_category: by_category.map { |r| { category: r.category, spent: r.spent.to_f.round(2), count: r.count } }
@@ -63,23 +70,6 @@ module Api
         .joins(:account)
         .where(accounts: { account_type: "CREDIT" })
         .excluding_card_payments
-    end
-
-    def serialize(t)
-      {
-        id: t.id,
-        external_id: t.external_id,
-        date: t.date,
-        amount: t.amount.to_f,
-        amount_brl: t.amount_brl&.to_f,
-        currency_code: t.currency_code,
-        description: t.description,
-        category: t.category,
-        original_category: t.original_category,
-        transaction_type: t.transaction_type,
-        status: t.status,
-        account_id: t.account_id
-      }
     end
   end
 end

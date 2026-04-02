@@ -1,4 +1,6 @@
 class Transaction < ApplicationRecord
+  CREDIT_CARD_PAYMENT_CATEGORY = "Credit card payment".freeze
+
   belongs_to :account
 
   validates :external_id, presence: true, uniqueness: true
@@ -10,7 +12,7 @@ class Transaction < ApplicationRecord
   scope :credits, -> { where("amount < 0") }
   scope :in_date_range, ->(from, to) { where(date: from..to) }
   scope :excluding_card_payments, -> {
-    where.not(original_category: "Credit card payment")
+    where.not(original_category: CREDIT_CARD_PAYMENT_CATEGORY)
       .or(where(original_category: nil))
   }
   scope :with_deleted, -> { unscope(where: :deleted_at) }

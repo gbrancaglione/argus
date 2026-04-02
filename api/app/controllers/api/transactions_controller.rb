@@ -1,5 +1,7 @@
 module Api
   class TransactionsController < ApplicationController
+    include TransactionSerialization
+
     before_action :authenticate!
 
     def index
@@ -19,7 +21,7 @@ module Api
       transaction = current_user.transactions.find(params[:id])
       permitted = params.permit(:category, :description).to_h.compact_blank
       transaction.update!(permitted) if permitted.any?
-      render json: serialize_local(transaction)
+      render json: serialize_transaction(transaction)
     rescue ActiveRecord::RecordNotFound
       render json: { error: "Transaction not found" }, status: :not_found
     end
@@ -97,21 +99,5 @@ module Api
       Time.zone.parse(iso_string)
     end
 
-    def serialize_local(t)
-      {
-        id: t.id,
-        external_id: t.external_id,
-        date: t.date,
-        amount: t.amount.to_f,
-        amount_brl: t.amount_brl&.to_f,
-        currency_code: t.currency_code,
-        description: t.description,
-        category: t.category,
-        original_category: t.original_category,
-        transaction_type: t.transaction_type,
-        status: t.status,
-        account_id: t.account_id
-      }
-    end
   end
 end

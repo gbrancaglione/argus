@@ -35,7 +35,7 @@ module Sync
 
         log.complete!(totals)
         log
-      rescue => e
+      rescue StandardError => e
         log.fail!(e.message)
         raise
       end

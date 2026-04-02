@@ -52,51 +52,41 @@ module Sync
     end
 
     def create_transaction(data)
-      pluggy_category = data["category"]
-      amount = data["amount"].to_f
-      currency = data["currencyCode"] || "BRL"
+      attrs = base_attributes(data)
+      attrs[:account] = @account
+      attrs[:external_id] = data["id"]
+      attrs[:category] = attrs[:original_category]
 
-      Transaction.create!(
-        account: @account,
-        external_id: data["id"],
-        date: parse_date(data["date"]),
-        amount: amount,
-        amount_brl: resolve_brl_amount(amount, currency, data),
-        currency_code: currency,
-        description: data["description"],
-        original_category: pluggy_category,
-        category: pluggy_category,
-        transaction_type: data["type"],
-        status: data["status"],
-        payment_method: data.dig("paymentData", "paymentMethod"),
-        raw_data: data
-      )
+      Transaction.create!(attrs)
       @stats[:created] += 1
     end
 
     def update_transaction(tx, data)
-      new_original = data["category"]
+      attrs = base_attributes(data)
+
+      # Only update user category if it was never manually changed
+      attrs[:category] = attrs[:original_category] if tx.category == tx.original_category
+
+      tx.update!(attrs)
+      @stats[:updated] += 1
+    end
+
+    def base_attributes(data)
       amount = data["amount"].to_f
       currency = data["currencyCode"] || "BRL"
 
-      attrs = {
+      {
         date: parse_date(data["date"]),
         amount: amount,
         amount_brl: resolve_brl_amount(amount, currency, data),
         currency_code: currency,
         description: data["description"],
-        original_category: new_original,
+        original_category: data["category"],
         transaction_type: data["type"],
         status: data["status"],
         payment_method: data.dig("paymentData", "paymentMethod"),
         raw_data: data
       }
-
-      # Only update user category if it was never manually changed
-      attrs[:category] = new_original if tx.category == tx.original_category
-
-      tx.update!(attrs)
-      @stats[:updated] += 1
     end
 
     def resolve_brl_amount(amount, currency, data)
