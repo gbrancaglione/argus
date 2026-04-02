@@ -3,6 +3,7 @@ import type {
   Account,
   TransactionsResponse,
   SpendingSummary,
+  LocalTransaction,
   LocalTransactionsResponse,
   CreditCardSummary,
   SyncLog,
