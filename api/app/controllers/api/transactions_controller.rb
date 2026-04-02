@@ -1,5 +1,7 @@
 module Api
   class TransactionsController < ApplicationController
+    include TransactionSerialization
+
     before_action :authenticate!
 
     def index
@@ -13,6 +15,23 @@ module Api
       render json: data
     rescue OpenFinance::Error => e
       render json: { error: e.message }, status: :bad_gateway
+    end
+
+    def update
+      transaction = current_user.transactions.find(params[:id])
+      permitted = params.permit(:category, :description).to_h.compact_blank
+      transaction.update!(permitted) if permitted.any?
+      render json: serialize_transaction(transaction)
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Transaction not found" }, status: :not_found
+    end
+
+    def destroy
+      transaction = current_user.transactions.find(params[:id])
+      transaction.soft_delete!
+      head :no_content
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Transaction not found" }, status: :not_found
     end
 
     def summary
@@ -79,5 +98,6 @@ module Api
     def to_br_time(iso_string)
       Time.zone.parse(iso_string)
     end
+
   end
 end

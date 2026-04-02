@@ -111,6 +111,88 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_gateway
   end
 
+  # — PATCH update tests (local DB) —
+
+  test "update changes transaction category" do
+    tx = transactions(:grocery_expense)
+    patch api_transaction_path(tx),
+      params: { category: "Mercado" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "Mercado", body["category"]
+    assert_equal "Groceries", body["original_category"]
+    assert_equal "Mercado", tx.reload.category
+  end
+
+  test "update changes transaction description" do
+    tx = transactions(:grocery_expense)
+    patch api_transaction_path(tx),
+      params: { description: "Supermercado Pão de Açúcar" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "Supermercado Pão de Açúcar", body["description"]
+    assert_equal "Supermercado Pão de Açúcar", tx.reload.description
+  end
+
+  test "update changes both category and description" do
+    tx = transactions(:grocery_expense)
+    patch api_transaction_path(tx),
+      params: { category: "Mercado", description: "Pão de Açúcar" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "Mercado", body["category"]
+    assert_equal "Pão de Açúcar", body["description"]
+  end
+
+  test "update returns 404 for other user transaction" do
+    tx = transactions(:other_user_tx)
+    patch api_transaction_path(tx),
+      params: { category: "New" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :not_found
+  end
+
+  test "update with no params returns current state" do
+    tx = transactions(:grocery_expense)
+    patch api_transaction_path(tx),
+      params: {},
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal tx.category, body["category"]
+  end
+
+  # — DELETE soft-delete tests —
+
+  test "destroy soft-deletes a transaction" do
+    tx = transactions(:grocery_expense)
+    delete api_transaction_path(tx), headers: @auth_headers, as: :json
+
+    assert_response :no_content
+    assert Transaction.with_deleted.find(tx.id).deleted?
+    assert_not Transaction.exists?(tx.id)
+  end
+
+  test "destroy returns 404 for other user transaction" do
+    tx = transactions(:other_user_tx)
+    delete api_transaction_path(tx), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+  end
+
   private
 
   def mock_client(transactions_response = nil)

@@ -9,7 +9,13 @@ Rails.application.routes.draw do
     resource :session, only: [:create, :destroy]
     resource :dashboard, only: [:show]
     resources :accounts, only: [:index]
-    resources :transactions, only: [:index] do
+    resources :transactions, only: [:index, :update, :destroy] do
+      collection do
+        get :summary
+      end
+    end
+    resources :syncs, only: [:create, :index]
+    resources :credit_card_expenses, only: [:index] do
       collection do
         get :summary
       end

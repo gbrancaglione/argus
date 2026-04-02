@@ -22,9 +22,17 @@ export default function Dashboard() {
 
       <main className="flex flex-col items-center justify-center gap-6" style={{ minHeight: "calc(100vh - 64px)" }}>
         <p className="text-neutral-medium text-lg">Welcome to Argus</p>
-        <Button variant="primary" size="large" onClick={() => navigate("/spending")}>
-          Ver gastos
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="primary" size="large" onClick={() => navigate("/credit-card")}>
+            Cartão de crédito
+          </Button>
+          <Button variant="secondary" size="large" onClick={() => navigate("/sync")}>
+            Sincronizar dados
+          </Button>
+          <Button variant="tertiary" size="large" onClick={() => navigate("/spending")}>
+            Ver gastos (proxy)
+          </Button>
+        </div>
       </main>
     </div>
   );
