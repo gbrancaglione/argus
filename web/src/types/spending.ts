@@ -19,6 +19,11 @@ export type Transaction = {
   currencyCode: string;
 };
 
+export type Label = {
+  id: number;
+  name: string;
+};
+
 export type LocalTransaction = {
   id: number;
   external_id: string;
@@ -28,6 +33,8 @@ export type LocalTransaction = {
   currency_code: string;
   description: string;
   category: string | null;
+  label_id: number | null;
+  category_edited: boolean;
   original_category: string | null;
   transaction_type: "DEBIT" | "CREDIT";
   status: string;

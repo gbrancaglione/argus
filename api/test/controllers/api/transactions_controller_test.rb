@@ -113,18 +113,21 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
 
   # — PATCH update tests (local DB) —
 
-  test "update changes transaction category" do
+  test "update changes transaction label" do
+    new_label = users(:admin).labels.create!(name: "Mercado")
     tx = transactions(:grocery_expense)
     patch api_transaction_path(tx),
-      params: { category: "Mercado" },
+      params: { label_id: new_label.id },
       headers: @auth_headers,
       as: :json
 
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "Mercado", body["category"]
+    assert_equal new_label.id, body["label_id"]
+    assert_equal true, body["category_edited"]
     assert_equal "Groceries", body["original_category"]
-    assert_equal "Mercado", tx.reload.category
+    assert_equal new_label.id, tx.reload.label_id
   end
 
   test "update changes transaction description" do
@@ -140,10 +143,11 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Supermercado Pão de Açúcar", tx.reload.description
   end
 
-  test "update changes both category and description" do
+  test "update changes both label and description" do
+    new_label = users(:admin).labels.create!(name: "Mercado")
     tx = transactions(:grocery_expense)
     patch api_transaction_path(tx),
-      params: { category: "Mercado", description: "Pão de Açúcar" },
+      params: { label_id: new_label.id, description: "Pão de Açúcar" },
       headers: @auth_headers,
       as: :json
 
@@ -155,8 +159,9 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
 
   test "update returns 404 for other user transaction" do
     tx = transactions(:other_user_tx)
+    new_label = users(:admin).labels.create!(name: "New")
     patch api_transaction_path(tx),
-      params: { category: "New" },
+      params: { label_id: new_label.id },
       headers: @auth_headers,
       as: :json
 
@@ -172,7 +177,7 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_response :success
     body = JSON.parse(response.body)
-    assert_equal tx.category, body["category"]
+    assert_equal tx.label.name, body["category"]
   end
 
   # — DELETE soft-delete tests —

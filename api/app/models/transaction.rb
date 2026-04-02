@@ -2,6 +2,7 @@ class Transaction < ApplicationRecord
   CREDIT_CARD_PAYMENT_CATEGORY = "Credit card payment".freeze
 
   belongs_to :account
+  belongs_to :label, optional: true
 
   validates :external_id, presence: true, uniqueness: true
   validates :date, :amount, :transaction_type, presence: true
@@ -24,8 +25,17 @@ class Transaction < ApplicationRecord
     amount > 0
   end
 
-  def reset_category!
-    update!(category: original_category)
+  def category_name
+    label&.name
+  end
+
+  def reset_label!
+    if original_category.present?
+      default_label = user.labels.find_or_create_by!(name: original_category)
+      update!(label: default_label, category_edited: false)
+    else
+      update!(label: nil, category_edited: false)
+    end
   end
 
   def soft_delete!

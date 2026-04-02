@@ -34,6 +34,7 @@ module CreditCardExpenses
     def credit_card_expenses
       @user.transactions
         .joins(:account)
+        .includes(:label)
         .where(accounts: { account_type: "CREDIT" })
         .excluding_card_payments
     end

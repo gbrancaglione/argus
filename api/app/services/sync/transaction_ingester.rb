@@ -55,7 +55,8 @@ module Sync
       attrs = base_attributes(data)
       attrs[:account] = @account
       attrs[:external_id] = data["id"]
-      attrs[:category] = attrs[:original_category]
+      attrs[:label] = resolve_label(attrs[:original_category])
+      attrs[:category_edited] = false
 
       Transaction.create!(attrs)
       @stats[:created] += 1
@@ -64,8 +65,10 @@ module Sync
     def update_transaction(tx, data)
       attrs = base_attributes(data)
 
-      # Only update user category if it was never manually changed
-      attrs[:category] = attrs[:original_category] if tx.category == tx.original_category
+      # Only update label if user never manually changed it
+      unless tx.category_edited
+        attrs[:label] = resolve_label(attrs[:original_category])
+      end
 
       tx.update!(attrs)
       @stats[:updated] += 1
@@ -95,6 +98,11 @@ module Sync
       elsif data["amountInAccountCurrency"]
         data["amountInAccountCurrency"].to_f
       end
+    end
+
+    def resolve_label(category_name)
+      return nil if category_name.blank?
+      @account.user.labels.find_or_create_by!(name: category_name)
     end
 
     def parse_date(iso_string)

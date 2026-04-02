@@ -9,6 +9,7 @@ Rails.application.routes.draw do
     resource :session, only: [:create, :destroy]
     resource :dashboard, only: [:show]
     resources :accounts, only: [:index]
+    resources :labels, only: [:index, :create]
     resources :transactions, only: [:index, :update, :destroy] do
       collection do
         get :summary

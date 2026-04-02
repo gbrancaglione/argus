@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -29,6 +29,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_000001) do
     t.index ["account_type"], name: "index_accounts_on_account_type"
     t.index ["user_id", "external_id"], name: "index_accounts_on_user_id_and_external_id", unique: true
     t.index ["user_id"], name: "index_accounts_on_user_id"
+  end
+
+  create_table "labels", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "name"], name: "index_labels_on_user_id_and_name", unique: true
+    t.index ["user_id"], name: "index_labels_on_user_id"
   end
 
   create_table "sync_logs", force: :cascade do |t|
@@ -53,13 +62,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_000001) do
     t.bigint "account_id", null: false
     t.decimal "amount", precision: 12, scale: 2, null: false
     t.decimal "amount_brl", precision: 12, scale: 2
-    t.string "category"
+    t.boolean "category_edited", default: false, null: false
     t.datetime "created_at", null: false
     t.string "currency_code", default: "BRL"
     t.date "date", null: false
     t.datetime "deleted_at"
     t.string "description"
     t.string "external_id", null: false
+    t.bigint "label_id"
     t.string "original_category"
     t.string "payment_method"
     t.jsonb "raw_data", default: {}
@@ -68,9 +78,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_000001) do
     t.datetime "updated_at", null: false
     t.index ["account_id", "date"], name: "index_transactions_on_account_id_and_date"
     t.index ["account_id"], name: "index_transactions_on_account_id"
-    t.index ["category"], name: "index_transactions_on_category"
     t.index ["deleted_at"], name: "index_transactions_on_deleted_at"
     t.index ["external_id"], name: "index_transactions_on_external_id", unique: true
+    t.index ["label_id"], name: "index_transactions_on_label_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -82,6 +92,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_000001) do
   end
 
   add_foreign_key "accounts", "users"
+  add_foreign_key "labels", "users"
   add_foreign_key "sync_logs", "users"
   add_foreign_key "transactions", "accounts"
+  add_foreign_key "transactions", "labels"
 end

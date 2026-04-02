@@ -17,9 +17,18 @@ module Api
 
     def update
       transaction = current_user.transactions.find(params[:id])
-      permitted = params.permit(:category, :description).to_h.compact_blank
-      transaction.update!(permitted) if permitted.any?
-      render json: TransactionSerializer.new(transaction).as_json
+      updates = {}
+
+      if params[:label_id].present?
+        label = current_user.labels.find(params[:label_id])
+        updates[:label] = label
+        updates[:category_edited] = true
+      end
+
+      updates[:description] = params[:description] if params[:description].present?
+
+      transaction.update!(updates) if updates.any?
+      render json: TransactionSerializer.new(transaction.reload).as_json
     rescue ActiveRecord::RecordNotFound
       render json: { error: "Transaction not found" }, status: :not_found
     end

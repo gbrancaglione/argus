@@ -13,6 +13,8 @@ class TransactionSerializerTest < ActiveSupport::TestCase
     assert_equal "BRL", result[:currency_code]
     assert_equal "Supermercado Extra", result[:description]
     assert_equal "Groceries", result[:category]
+    assert_equal labels(:groceries).id, result[:label_id]
+    assert_equal false, result[:category_edited]
     assert_equal "Groceries", result[:original_category]
     assert_equal "DEBIT", result[:transaction_type]
     assert_equal "POSTED", result[:status]
