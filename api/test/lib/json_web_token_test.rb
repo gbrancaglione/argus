@@ -19,7 +19,11 @@ class JsonWebTokenTest < ActiveSupport::TestCase
 
   test "decode returns nil for tampered token" do
     token = JsonWebToken.encode(user_id: 1)
-    tampered = token[0..-2] + "X"
+    parts = token.split(".")
+    # Flip a character in the signature portion to guarantee invalidation
+    sig = parts[2]
+    flipped = sig.chars.map { |c| c == "A" ? "B" : "A" }.join
+    tampered = [parts[0], parts[1], flipped].join(".")
     assert_nil JsonWebToken.decode(tampered)
   end
 
