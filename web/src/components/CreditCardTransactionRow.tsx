@@ -12,7 +12,7 @@ export default function CreditCardTransactionRow({
 }: CreditCardTransactionRowProps) {
   const isExpense = transaction.amount > 0;
   const isForeign = transaction.currency_code !== "BRL";
-  const categoryChanged = transaction.category !== transaction.original_category;
+  const categoryChanged = transaction.category_edited;
 
   return (
     <button

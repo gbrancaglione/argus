@@ -7,7 +7,8 @@ grocery_expense:
   currency_code: "BRL"
   description: "Supermercado Extra"
   original_category: "Groceries"
-  category: "Groceries"
+  label: groceries
+  category_edited: false
   transaction_type: "DEBIT"
   status: "POSTED"
   raw_data: {}
@@ -21,7 +22,8 @@ restaurant_expense:
   currency_code: "BRL"
   description: "Restaurante Fasano"
   original_category: "Food and drinks"
-  category: "Alimentação"
+  label: alimentacao
+  category_edited: true
   transaction_type: "DEBIT"
   status: "POSTED"
   raw_data: {}
@@ -35,7 +37,8 @@ card_payment:
   currency_code: "BRL"
   description: "Pagamento de fatura"
   original_category: "Credit card payment"
-  category: "Credit card payment"
+  label: credit_card_payment
+  category_edited: false
   transaction_type: "CREDIT"
   status: "POSTED"
   raw_data: {}
@@ -49,7 +52,8 @@ foreign_expense:
   currency_code: "USD"
   description: "Amazon.com"
   original_category: "Shopping"
-  category: "Shopping"
+  label: shopping
+  category_edited: false
   transaction_type: "DEBIT"
   status: "POSTED"
   raw_data: {}
@@ -63,7 +67,8 @@ other_user_tx:
   currency_code: "BRL"
   description: "Uber"
   original_category: "Transportation"
-  category: "Transportation"
+  label: transportation
+  category_edited: false
   transaction_type: "DEBIT"
   status: "POSTED"
   raw_data: {}

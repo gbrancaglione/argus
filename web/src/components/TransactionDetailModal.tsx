@@ -1,8 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import type { LocalTransaction } from "../types/spending";
-import { updateTransaction, deleteTransaction } from "../api/spending";
+import type { LocalTransaction, Label } from "../types/spending";
+import {
+  updateTransaction,
+  deleteTransaction,
+  fetchLabels,
+  createLabel,
+} from "../api/spending";
 import { formatBRL } from "../utils/format";
 import Button from "./Button";
+import InputSelect from "./InputSelect";
 
 type TransactionDetailModalProps = {
   transaction: LocalTransaction;
@@ -18,7 +24,10 @@ export default function TransactionDetailModal({
   onDelete,
 }: TransactionDetailModalProps) {
   const [description, setDescription] = useState(transaction.description ?? "");
-  const [category, setCategory] = useState(transaction.category ?? "");
+  const [labelId, setLabelId] = useState<string>(
+    transaction.label_id != null ? String(transaction.label_id) : ""
+  );
+  const [labels, setLabels] = useState<Label[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -26,10 +35,14 @@ export default function TransactionDetailModal({
 
   const isExpense = transaction.amount > 0;
   const isForeign = transaction.currency_code !== "BRL";
-  const categoryChanged = transaction.category !== transaction.original_category;
+  const categoryEdited = transaction.category_edited;
   const hasChanges =
     description !== (transaction.description ?? "") ||
-    category !== (transaction.category ?? "");
+    labelId !== (transaction.label_id != null ? String(transaction.label_id) : "");
+
+  useEffect(() => {
+    fetchLabels().then(setLabels);
+  }, []);
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
@@ -43,12 +56,21 @@ export default function TransactionDetailModal({
     if (e.target === backdropRef.current) onClose();
   }
 
+  async function handleCreateLabel(name: string) {
+    const label = await createLabel(name);
+    setLabels((prev) => [...prev, label].sort((a, b) => a.name.localeCompare(b.name)));
+    return { value: String(label.id), label: label.name };
+  }
+
   async function handleSave() {
     if (saving || !hasChanges) return;
     setSaving(true);
     try {
-      const updates: { category?: string; description?: string } = {};
-      if (category !== (transaction.category ?? "")) updates.category = category;
+      const updates: { label_id?: number | null; description?: string } = {};
+      const currentLabelId = transaction.label_id != null ? String(transaction.label_id) : "";
+      if (labelId !== currentLabelId) {
+        updates.label_id = labelId === "" ? null : Number(labelId);
+      }
       if (description !== (transaction.description ?? ""))
         updates.description = description;
 
@@ -71,6 +93,11 @@ export default function TransactionDetailModal({
       setDeleting(false);
     }
   }
+
+  const labelOptions = labels.map((l) => ({
+    value: String(l.id),
+    label: l.name,
+  }));
 
   return (
     <div
@@ -159,22 +186,21 @@ export default function TransactionDetailModal({
             />
           </div>
 
-          {/* Category — editable */}
+          {/* Category — select */}
           <div>
-            <label className="text-sm text-neutral-medium block mb-1">
-              Categoria
-              {categoryChanged && (
-                <span className="ml-2 text-xs text-status-warning-dark">
-                  (original: {transaction.original_category})
-                </span>
-              )}
-            </label>
-            <input
-              type="text"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full border border-neutral-light rounded-lg px-3 py-2 text-sm text-neutral-darkest bg-neutral-white focus:border-brand-primary focus:outline-none"
+            <InputSelect
+              label="Categoria"
+              options={labelOptions}
+              value={labelId}
+              onChange={setLabelId}
+              placeholder="Sem categoria"
+              onCreateNew={handleCreateLabel}
             />
+            {categoryEdited && (
+              <span className="text-xs text-status-warning-dark mt-1 block">
+                (original: {transaction.original_category})
+              </span>
+            )}
           </div>
 
           {/* External ID */}

@@ -8,6 +8,7 @@ import type {
   CreditCardSummary,
   SyncLog,
   LocalAccount,
+  Label,
 } from "../types/spending";
 
 export function fetchAccounts() {
@@ -91,9 +92,20 @@ export function fetchCreditCardSummary(params: {
   return apiRequest<CreditCardSummary>(`/credit_card_expenses/summary?${query}`);
 }
 
+export function fetchLabels() {
+  return apiRequest<Label[]>("/labels");
+}
+
+export function createLabel(name: string) {
+  return apiRequest<Label>("/labels", {
+    method: "POST",
+    body: { name },
+  });
+}
+
 export function updateTransaction(
   id: number,
-  updates: { category?: string; description?: string }
+  updates: { label_id?: number | null; description?: string }
 ) {
   return apiRequest<LocalTransaction>(`/transactions/${id}`, {
     method: "PATCH",

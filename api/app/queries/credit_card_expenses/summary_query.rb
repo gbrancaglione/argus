@@ -62,8 +62,9 @@ module CreditCardExpenses
 
     def category_breakdown
       expenses
-        .group(:category)
-        .select(Arel.sql("category, SUM(#{BRL_SUM}) as spent, COUNT(*) as count"))
+        .left_joins(:label)
+        .group("labels.name")
+        .select(Arel.sql("labels.name as category, SUM(#{BRL_SUM}) as spent, COUNT(*) as count"))
         .order(Arel.sql("SUM(#{BRL_SUM}) DESC"))
         .map { |r| { category: r.category, spent: r.spent.to_f.round(2), count: r.count } }
     end

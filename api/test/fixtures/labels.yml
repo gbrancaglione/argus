@@ -1,0 +1,19 @@
+groceries:
+  user: admin
+  name: "Groceries"
+
+alimentacao:
+  user: admin
+  name: "Alimentação"
+
+credit_card_payment:
+  user: admin
+  name: "Credit card payment"
+
+shopping:
+  user: admin
+  name: "Shopping"
+
+transportation:
+  user: other
+  name: "Transportation"

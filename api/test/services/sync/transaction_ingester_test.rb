@@ -24,7 +24,7 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     assert_equal 2, @account.transactions.count
   end
 
-  test "sets category to original_category on create" do
+  test "creates label matching original_category on create" do
     OpenFinance.client = mock_client([
       pluggy_tx("tx-cat", category: "Shopping")
     ])
@@ -33,11 +33,13 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
 
     tx = Transaction.find_by(external_id: "tx-cat")
     assert_equal "Shopping", tx.original_category
-    assert_equal "Shopping", tx.category
+    assert_equal "Shopping", tx.label.name
+    assert_not tx.category_edited
   end
 
   test "skips unchanged transactions" do
     raw = pluggy_tx("tx-existing")
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
     Transaction.create!(
       account: @account,
       external_id: "tx-existing",
@@ -47,7 +49,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
       currency_code: "BRL",
       description: "Test",
       original_category: "Shopping",
-      category: "Shopping",
+      label: shopping_label,
+      category_edited: false,
       transaction_type: "DEBIT",
       status: "POSTED",
       raw_data: raw
@@ -62,6 +65,7 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
   end
 
   test "updates changed transactions" do
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
     Transaction.create!(
       account: @account,
       external_id: "tx-changed",
@@ -71,7 +75,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
       currency_code: "BRL",
       description: "Old description",
       original_category: "Shopping",
-      category: "Shopping",
+      label: shopping_label,
+      category_edited: false,
       transaction_type: "DEBIT",
       status: "POSTED",
       raw_data: pluggy_tx("tx-changed", description: "Old description")
@@ -89,7 +94,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     assert_equal "New description", tx.description
   end
 
-  test "preserves user-edited category on update" do
+  test "preserves user-edited label on update" do
+    custom_label = @account.user.labels.find_or_create_by!(name: "Compras pessoais")
     Transaction.create!(
       account: @account,
       external_id: "tx-edited",
@@ -99,7 +105,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
       currency_code: "BRL",
       description: "Store",
       original_category: "Shopping",
-      category: "Compras pessoais",
+      label: custom_label,
+      category_edited: true,
       transaction_type: "DEBIT",
       status: "POSTED",
       raw_data: pluggy_tx("tx-edited", description: "Store")
@@ -112,12 +119,13 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     stats = Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31").call
 
     tx = Transaction.find_by(external_id: "tx-edited")
-    assert_equal "Compras pessoais", tx.category
+    assert_equal "Compras pessoais", tx.label.name
     assert_equal "Online shopping", tx.original_category
     assert_equal 1, stats[:updated]
   end
 
-  test "updates category when user has not edited it" do
+  test "updates label when user has not edited it" do
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
     Transaction.create!(
       account: @account,
       external_id: "tx-unedited",
@@ -127,7 +135,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
       currency_code: "BRL",
       description: "Store",
       original_category: "Shopping",
-      category: "Shopping",
+      label: shopping_label,
+      category_edited: false,
       transaction_type: "DEBIT",
       status: "POSTED",
       raw_data: pluggy_tx("tx-unedited", description: "Store")
@@ -140,7 +149,7 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31").call
 
     tx = Transaction.find_by(external_id: "tx-unedited")
-    assert_equal "Online shopping", tx.category
+    assert_equal "Online shopping", tx.label.name
     assert_equal "Online shopping", tx.original_category
   end
 
@@ -195,6 +204,7 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
   end
 
   test "skips soft-deleted transactions" do
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
     tx = Transaction.create!(
       account: @account,
       external_id: "tx-deleted",
@@ -204,7 +214,8 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
       currency_code: "BRL",
       description: "Deleted",
       original_category: "Shopping",
-      category: "Shopping",
+      label: shopping_label,
+      category_edited: false,
       transaction_type: "DEBIT",
       status: "POSTED",
       raw_data: pluggy_tx("tx-deleted")

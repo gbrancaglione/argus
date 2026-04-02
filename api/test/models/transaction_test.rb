@@ -63,12 +63,34 @@ class TransactionTest < ActiveSupport::TestCase
     assert_not transactions(:card_payment).expense?
   end
 
-  test "reset_category! restores original category" do
+  test "reset_label! restores label to match original_category" do
     tx = transactions(:restaurant_expense)
-    assert_equal "Alimentação", tx.category
-    assert_equal "Food and drinks", tx.original_category
-    tx.reset_category!
-    assert_equal "Food and drinks", tx.reload.category
+    assert_equal "Alimentação", tx.label.name
+    assert tx.category_edited
+    tx.reset_label!
+    tx.reload
+    assert_equal "Food and drinks", tx.label.name
+    assert_not tx.category_edited
+  end
+
+  test "reset_label! with nil original_category clears label" do
+    tx = transactions(:grocery_expense)
+    tx.update!(original_category: nil)
+    tx.reset_label!
+    tx.reload
+    assert_nil tx.label
+    assert_not tx.category_edited
+  end
+
+  test "category_name returns label name" do
+    tx = transactions(:grocery_expense)
+    assert_equal "Groceries", tx.category_name
+  end
+
+  test "category_name returns nil when no label" do
+    tx = transactions(:grocery_expense)
+    tx.label = nil
+    assert_nil tx.category_name
   end
 
   test "user delegation through account" do
