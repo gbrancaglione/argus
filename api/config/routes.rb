@@ -8,5 +8,11 @@ Rails.application.routes.draw do
   namespace :api do
     resource :session, only: [:create, :destroy]
     resource :dashboard, only: [:show]
+    resources :accounts, only: [:index]
+    resources :transactions, only: [:index] do
+      collection do
+        get :summary
+      end
+    end
   end
 end

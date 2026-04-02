@@ -1,19 +1,6 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from "react";
+import { useState, useCallback, type ReactNode } from "react";
 import { apiRequest } from "../api/client";
-
-type User = {
-  id: number;
-  email: string;
-};
-
-type AuthState = {
-  user: User | null;
-  isAuthenticated: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => void;
-};
-
-const AuthContext = createContext<AuthState | null>(null);
+import { AuthContext, type User } from "./authTypes";
 
 const USER_KEY = "argus_user";
 
@@ -54,10 +41,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used within AuthProvider");
-  return context;
 }

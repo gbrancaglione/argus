@@ -1,9 +1,10 @@
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/useAuth";
 import Button from "../components/Button";
 
 export default function Dashboard() {
   const { isAuthenticated, user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   if (!isAuthenticated) return <Navigate to="/signin" replace />;
 
@@ -19,8 +20,11 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex items-center justify-center" style={{ minHeight: "calc(100vh - 64px)" }}>
+      <main className="flex flex-col items-center justify-center gap-6" style={{ minHeight: "calc(100vh - 64px)" }}>
         <p className="text-neutral-medium text-lg">Welcome to Argus</p>
+        <Button variant="primary" size="large" onClick={() => navigate("/spending")}>
+          Ver gastos
+        </Button>
       </main>
     </div>
   );

@@ -26,4 +26,10 @@ group :development, :test do
 
   # Audits gems for known security defects (use config/bundler-audit.yml to ignore issues)
   gem "bundler-audit", require: false
+
+  gem "dotenv-rails", "~> 3.1"
+end
+
+group :test do
+  gem "webmock", "~> 3.24"
 end

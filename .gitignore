@@ -16,6 +16,11 @@ web/dist/
 api/log/*
 api/tmp/*
 api/storage/*
+api/cache/*
+api/extensions/*
+api/gems/*
+api/plugins/*
+api/specifications/*
 api/db/*.sqlite3*
 api/config/master.key
 api/config/credentials/*.key
