@@ -9,13 +9,19 @@ module Transactions
     end
 
     def call
-      transactions = fetch_all
+      raw_transactions = fetch_all
+      processed = raw_transactions.map do |t|
+        {
+          amount: expense_amount(t),
+          date: Time.zone.parse(t["date"])
+        }
+      end
 
       {
-        total_spent: transactions.sum { |t| expense_amount(t) }.round(2),
-        monthly: group_by_period(transactions, "%Y-%m"),
-        daily: group_by_period(transactions, "%Y-%m-%d"),
-        transaction_count: transactions.size
+        total_spent: processed.sum { |t| t[:amount] }.round(2),
+        monthly: group_processed(processed, "%Y-%m"),
+        daily: group_processed(processed, "%Y-%m-%d"),
+        transaction_count: processed.size
       }
     end
 
@@ -44,10 +50,10 @@ module Transactions
       amount > 0 ? amount : 0
     end
 
-    def group_by_period(transactions, format)
-      transactions
-        .group_by { |t| Time.zone.parse(t["date"]).strftime(format) }
-        .transform_values { |txns| { spent: txns.sum { |t| expense_amount(t) }.round(2), count: txns.size } }
+    def group_processed(processed, format)
+      processed
+        .group_by { |t| t[:date].strftime(format) }
+        .transform_values { |txns| { spent: txns.sum { |t| t[:amount] }.round(2), count: txns.size } }
         .sort_by { |k, _| k }
         .to_h
     end

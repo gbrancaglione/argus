@@ -29,17 +29,19 @@ module CreditCardExpenses
         .expenses
     end
 
-    def total_spent
-      stats = expenses
+    def stats
+      @stats ||= expenses
         .reorder("")
-        .select(Arel.sql("SUM(#{BRL_SUM}) as total_spent"))
+        .select(Arel.sql("SUM(#{BRL_SUM}) as total_spent, COUNT(*) as transaction_count"))
         .take
+    end
 
-      (stats.total_spent || 0).to_f.round(2)
+    def total_spent
+      (stats&.total_spent || 0).to_f.round(2)
     end
 
     def transaction_count
-      expenses.count
+      stats&.transaction_count || 0
     end
 
     def monthly_breakdown
