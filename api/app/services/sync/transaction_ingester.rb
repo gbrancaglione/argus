@@ -102,7 +102,8 @@ module Sync
 
     def resolve_label(category_name)
       return nil if category_name.blank?
-      @account.user.labels.find_or_create_by!(name: category_name)
+      @labels_cache ||= {}
+      @labels_cache[category_name] ||= @account.user.labels.find_or_create_by!(name: category_name)
     end
 
     def parse_date(iso_string)

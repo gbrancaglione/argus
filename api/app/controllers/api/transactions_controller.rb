@@ -19,18 +19,17 @@ module Api
       transaction = current_user.transactions.find(params[:id])
       updates = {}
 
-      if params[:label_id].present?
-        label = current_user.labels.find(params[:label_id])
-        updates[:label] = label
+      if params.key?(:label_id)
+        updates[:label] = params[:label_id].present? ? current_user.labels.find(params[:label_id]) : nil
         updates[:category_edited] = true
       end
 
-      updates[:description] = params[:description] if params[:description].present?
+      updates[:description] = params[:description] if params.key?(:description)
 
       transaction.update!(updates) if updates.any?
       render json: TransactionSerializer.new(transaction.reload).as_json
-    rescue ActiveRecord::RecordNotFound
-      render json: { error: "Transaction not found" }, status: :not_found
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "#{e.model || 'Resource'} not found" }, status: :not_found
     end
 
     def destroy

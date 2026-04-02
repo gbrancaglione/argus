@@ -66,10 +66,10 @@ export default function TransactionDetailModal({
     if (saving || !hasChanges) return;
     setSaving(true);
     try {
-      const updates: { label_id?: number; description?: string } = {};
+      const updates: { label_id?: number | null; description?: string } = {};
       const currentLabelId = transaction.label_id != null ? String(transaction.label_id) : "";
-      if (labelId !== currentLabelId && labelId !== "") {
-        updates.label_id = Number(labelId);
+      if (labelId !== currentLabelId) {
+        updates.label_id = labelId === "" ? null : Number(labelId);
       }
       if (description !== (transaction.description ?? ""))
         updates.description = description;

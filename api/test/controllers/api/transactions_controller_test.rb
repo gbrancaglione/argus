@@ -143,6 +143,38 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Supermercado Pão de Açúcar", tx.reload.description
   end
 
+  test "update clears label when label_id is nil" do
+    tx = transactions(:grocery_expense)
+    assert_not_nil tx.label_id
+
+    patch api_transaction_path(tx),
+      params: { label_id: nil },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_nil body["label_id"]
+    assert_nil body["category"]
+    assert_equal true, body["category_edited"]
+    assert_nil tx.reload.label_id
+  end
+
+  test "update clears description when empty string" do
+    tx = transactions(:grocery_expense)
+    tx.update!(description: "Something")
+
+    patch api_transaction_path(tx),
+      params: { description: "" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "", body["description"]
+    assert_equal "", tx.reload.description
+  end
+
   test "update changes both label and description" do
     new_label = users(:admin).labels.create!(name: "Mercado")
     tx = transactions(:grocery_expense)

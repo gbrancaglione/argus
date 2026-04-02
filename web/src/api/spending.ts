@@ -105,7 +105,7 @@ export function createLabel(name: string) {
 
 export function updateTransaction(
   id: number,
-  updates: { label_id?: number; description?: string }
+  updates: { label_id?: number | null; description?: string }
 ) {
   return apiRequest<LocalTransaction>(`/transactions/${id}`, {
     method: "PATCH",

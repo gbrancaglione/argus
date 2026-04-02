@@ -35,9 +35,7 @@ class CreateLabelsAndReplaceCategory < ActiveRecord::Migration[8.1]
     execute <<~SQL
       UPDATE transactions
       SET category_edited = true
-      WHERE category IS NOT NULL
-        AND original_category IS NOT NULL
-        AND category != original_category
+      WHERE category IS DISTINCT FROM original_category
     SQL
 
     remove_index :transactions, :category
