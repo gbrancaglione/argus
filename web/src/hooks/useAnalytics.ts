@@ -19,15 +19,16 @@ function defaultTo() {
 export function useAnalytics() {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
+  const [granularity, setGranularityState] = useState<"month" | "week" | "day">("month");
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const load = useCallback(async (fromDate: string, toDate: string) => {
+  const load = useCallback(async (fromDate: string, toDate: string, gran: string) => {
     setLoading(true);
     setError("");
     try {
-      const result = await fetchCreditCardAnalytics({ from: fromDate, to: toDate });
+      const result = await fetchCreditCardAnalytics({ from: fromDate, to: toDate, granularity: gran });
       setData(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load analytics");
@@ -37,14 +38,19 @@ export function useAnalytics() {
   }, []);
 
   const init = useCallback(() => {
-    load(defaultFrom(), defaultTo());
+    load(defaultFrom(), defaultTo(), "month");
   }, [load]);
 
   const setRange = useCallback((newFrom: string, newTo: string) => {
     setFrom(newFrom);
     setTo(newTo);
-    load(newFrom, newTo);
-  }, [load]);
+    load(newFrom, newTo, granularity);
+  }, [load, granularity]);
 
-  return { from, to, data, loading, error, init, setRange };
+  const setGranularity = useCallback((gran: "month" | "week" | "day") => {
+    setGranularityState(gran);
+    load(from, to, gran);
+  }, [load, from, to]);
+
+  return { from, to, granularity, data, loading, error, init, setRange, setGranularity };
 }

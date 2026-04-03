@@ -114,6 +114,18 @@ export type AnalyticsData = {
   top_categories: TopCategory[];
 };
 
+export type SpendingPaceMonth = {
+  label: string;
+  days: Record<number, number>;
+  total: number;
+};
+
+export type SpendingPaceData = {
+  months: Record<string, SpendingPaceMonth>;
+  today: number;
+  current_month: string;
+};
+
 export type LocalAccount = {
   id: number;
   external_id: string;

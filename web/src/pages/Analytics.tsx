@@ -5,8 +5,12 @@ import { fetchCreditCardExpenses } from "../api/spending";
 import { formatBRL } from "../utils/format";
 import type { LocalTransaction } from "../types/spending";
 import DateRangePicker from "../components/DateRangePicker";
+import PeriodPresetBar from "../components/PeriodPresetBar";
+import GranularityToggle from "../components/GranularityToggle";
 import PeriodComparisonCard from "../components/PeriodComparisonCard";
 import SpendingTrendChart from "../components/SpendingTrendChart";
+import CategoryTrendChart from "../components/CategoryTrendChart";
+import MonthOverMonthTable from "../components/MonthOverMonthTable";
 import CreditCardTransactionRow from "../components/CreditCardTransactionRow";
 import TransactionDetailModal from "../components/TransactionDetailModal";
 
@@ -33,7 +37,7 @@ function monthRange(yyyyMm: string) {
 
 export default function Analytics() {
   const navigate = useNavigate();
-  const { from, to, data, loading, error, init, setRange } = useAnalytics();
+  const { from, to, granularity, data, loading, error, init, setRange, setGranularity } = useAnalytics();
 
   // Month drill-down state
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -85,11 +89,11 @@ export default function Analytics() {
     init();
   }, [init]);
 
-  const months = data
+  const periods = data
     ? Object.keys(data.monthly_trend).sort()
     : [];
 
-  const monthlyTotals = data
+  const periodTotals = data
     ? Object.fromEntries(
         Object.entries(data.monthly_trend).map(([m, v]) => [m, v.spent])
       )
@@ -106,15 +110,21 @@ export default function Analytics() {
         .sort((a, b) => b.spent - a.spent)
     : [];
 
-  const monthTotal = selectedMonth ? (monthlyTotals[selectedMonth] ?? 0) : 0;
+  const monthTotal = selectedMonth ? (periodTotals[selectedMonth] ?? 0) : 0;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <div className="flex items-center justify-between gap-4 mb-6">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-4 mb-4">
         <h2 className="font-heading text-xl font-black text-neutral-darkest">
           Analytics
         </h2>
         <DateRangePicker from={from} to={to} onChange={handleRangeChange} />
+      </div>
+
+      {/* Period presets */}
+      <div className="mb-6">
+        <PeriodPresetBar activeFrom={from} activeTo={to} onSelect={handleRangeChange} />
       </div>
 
       {error && (
@@ -136,40 +146,46 @@ export default function Analytics() {
               currentValue={formatBRL(data.current_period.total_spent)}
               currentRaw={data.current_period.total_spent}
               previousRaw={data.previous_period.total_spent}
+              previousValue={formatBRL(data.previous_period.total_spent)}
             />
             <PeriodComparisonCard
               label="Transações"
               currentValue={String(data.current_period.transaction_count)}
               currentRaw={data.current_period.transaction_count}
               previousRaw={data.previous_period.transaction_count}
+              previousValue={String(data.previous_period.transaction_count)}
             />
             <PeriodComparisonCard
               label="Média diária"
               currentValue={formatBRL(data.current_period.daily_average)}
               currentRaw={data.current_period.daily_average}
               previousRaw={data.previous_period.daily_average}
+              previousValue={formatBRL(data.previous_period.daily_average)}
             />
           </div>
 
-          {/* Monthly spending trend */}
+          {/* Spending trend chart */}
           <div className="bg-neutral-white rounded-lg shadow-level-1 p-6 mb-8">
-            <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
-              Gasto mensal
-              <span className="text-xs text-neutral-medium font-normal ml-2">
-                Clique em um mês para detalhes
-              </span>
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-heading font-black text-lg text-neutral-darkest">
+                Gasto por período
+                <span className="text-xs text-neutral-medium font-normal ml-2">
+                  Clique em um período para detalhes
+                </span>
+              </h3>
+              <GranularityToggle value={granularity} onChange={setGranularity} />
+            </div>
             <SpendingTrendChart
-              months={months}
+              months={periods}
               categoryTrend={data.category_trend}
-              monthlyTotals={monthlyTotals}
+              monthlyTotals={periodTotals}
               selectedMonth={selectedMonth}
-              onMonthClick={handleMonthClick}
+              onMonthClick={granularity === "month" ? handleMonthClick : undefined}
             />
           </div>
 
           {/* Month detail drill-down */}
-          {selectedMonth && (
+          {selectedMonth && granularity === "month" && (
             <div ref={monthDetailRef} className="bg-neutral-white rounded-lg shadow-level-1 p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-heading font-black text-lg text-neutral-darkest">
@@ -266,55 +282,74 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* Top categories */}
+          {/* Category trend line chart */}
           <div className="bg-neutral-white rounded-lg shadow-level-1 p-6 mb-8">
             <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
-              Top categorias
+              Tendência por categoria
             </h3>
-            {data.top_categories.length === 0 ? (
-              <p className="text-neutral-medium text-sm py-4 text-center">
-                Sem dados para o periodo.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {data.top_categories.map((cat, i) => (
-                  <button
-                    key={cat.category ?? "uncategorized"}
-                    onClick={() =>
-                      navigate(
-                        `/credit-card/category/${encodeURIComponent(cat.category ?? "uncategorized")}`
-                      )
-                    }
-                    className="w-full flex items-center gap-4 py-2 cursor-pointer hover:bg-neutral-bg rounded-lg px-2 transition-colors text-left"
-                  >
-                    <span className="w-6 h-6 flex items-center justify-center rounded-full bg-brand-primary-lightest text-brand-primary text-xs font-bold shrink-0">
-                      {i + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-bold text-neutral-darkest truncate">
-                          {cat.category ?? "Sem categoria"}
-                        </span>
-                        <div className="flex items-center gap-2 ml-2 shrink-0">
-                          <span className="text-xs text-neutral-medium">
-                            {cat.percentage}%
+            <CategoryTrendChart data={data.category_trend} months={periods} />
+          </div>
+
+          {/* Two-column: Top categories + Month over month */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Top categories */}
+            <div className="bg-neutral-white rounded-lg shadow-level-1 p-6">
+              <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
+                Top categorias
+              </h3>
+              {data.top_categories.length === 0 ? (
+                <p className="text-neutral-medium text-sm py-4 text-center">
+                  Sem dados para o período.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {data.top_categories.map((cat, i) => (
+                    <button
+                      key={cat.category ?? "uncategorized"}
+                      onClick={() =>
+                        navigate(
+                          `/credit-card/category/${encodeURIComponent(cat.category ?? "uncategorized")}`
+                        )
+                      }
+                      className="w-full flex items-center gap-4 py-2 cursor-pointer hover:bg-neutral-bg rounded-lg px-2 transition-colors text-left"
+                    >
+                      <span className="w-6 h-6 flex items-center justify-center rounded-full bg-brand-primary-lightest text-brand-primary text-xs font-bold shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-bold text-neutral-darkest truncate">
+                            {cat.category ?? "Sem categoria"}
                           </span>
-                          <span className="font-heading font-black text-status-error text-sm">
-                            {formatBRL(cat.spent)}
-                          </span>
+                          <div className="flex items-center gap-2 ml-2 shrink-0">
+                            <span className="text-xs text-neutral-medium">
+                              {cat.percentage}%
+                            </span>
+                            <span className="font-heading font-black text-status-error text-sm">
+                              {formatBRL(cat.spent)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="w-full bg-neutral-lightest rounded-full h-1.5">
+                          <div
+                            className="bg-brand-primary h-1.5 rounded-full transition-all"
+                            style={{ width: `${Math.min(cat.percentage, 100)}%` }}
+                          />
                         </div>
                       </div>
-                      <div className="w-full bg-neutral-lightest rounded-full h-1.5">
-                        <div
-                          className="bg-brand-primary h-1.5 rounded-full transition-all"
-                          style={{ width: `${Math.min(cat.percentage, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Month over month changes */}
+            <div className="bg-neutral-white rounded-lg shadow-level-1 p-6">
+              <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
+                Variação entre períodos
+              </h3>
+              <MonthOverMonthTable data={data.monthly_trend} />
+            </div>
           </div>
         </>
       ) : null}

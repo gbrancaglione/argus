@@ -71,6 +71,46 @@ class CreditCardExpenses::AnalyticsQueryTest < ActiveSupport::TestCase
     end
   end
 
+  test "granularity week returns week-keyed data" do
+    result = CreditCardExpenses::AnalyticsQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31", granularity: "week"
+    ).call
+
+    result[:monthly_trend].each_key do |key|
+      assert_match(/\A\d{4}-W\d{2}\z/, key, "Week key should match YYYY-Wnn format")
+    end
+  end
+
+  test "granularity day returns day-keyed data" do
+    result = CreditCardExpenses::AnalyticsQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31", granularity: "day"
+    ).call
+
+    result[:monthly_trend].each_key do |key|
+      assert_match(/\A\d{4}-\d{2}-\d{2}\z/, key, "Day key should match YYYY-MM-DD format")
+    end
+  end
+
+  test "default granularity is monthly" do
+    result = CreditCardExpenses::AnalyticsQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31"
+    ).call
+
+    result[:monthly_trend].each_key do |key|
+      assert_match(/\A\d{4}-\d{2}\z/, key, "Month key should match YYYY-MM format")
+    end
+  end
+
+  test "invalid granularity falls back to month" do
+    result = CreditCardExpenses::AnalyticsQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31", granularity: "invalid"
+    ).call
+
+    result[:monthly_trend].each_key do |key|
+      assert_match(/\A\d{4}-\d{2}\z/, key)
+    end
+  end
+
   test "returns zeros for empty periods" do
     result = CreditCardExpenses::AnalyticsQuery.new(
       @user, from: "2020-01-01", to: "2020-01-31"
