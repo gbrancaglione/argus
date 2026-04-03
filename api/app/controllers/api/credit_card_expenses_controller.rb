@@ -34,7 +34,17 @@ module Api
       result = CreditCardExpenses::AnalyticsQuery.new(
         current_user,
         from: params.require(:from),
-        to: params.require(:to)
+        to: params.require(:to),
+        granularity: params.fetch(:granularity, "month")
+      ).call
+
+      render json: result
+    end
+
+    def spending_pace
+      result = CreditCardExpenses::SpendingPaceQuery.new(
+        current_user,
+        months: params.fetch(:months, 6).to_i
       ).call
 
       render json: result

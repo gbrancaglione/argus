@@ -144,6 +144,37 @@ class Api::CreditCardExpensesControllerTest < ActionDispatch::IntegrationTest
     assert_response :unauthorized
   end
 
+  test "spending_pace returns structured data" do
+    get "#{spending_pace_api_credit_card_expenses_path}",
+      headers: @auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_kind_of Hash, body["months"]
+    assert body["today"].is_a?(Integer)
+    assert body["current_month"].is_a?(String)
+
+    body["months"].each do |_key, month_data|
+      assert_kind_of String, month_data["label"]
+      assert_kind_of Hash, month_data["days"]
+      assert month_data["total"].is_a?(Numeric)
+    end
+  end
+
+  test "spending_pace requires authentication" do
+    get spending_pace_api_credit_card_expenses_path
+    assert_response :unauthorized
+  end
+
+  test "spending_pace accepts months param" do
+    get "#{spending_pace_api_credit_card_expenses_path}?months=3",
+      headers: @auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 3, body["months"].size
+  end
+
   test "requires from and to params" do
     get api_credit_card_expenses_path, headers: @auth_headers
 

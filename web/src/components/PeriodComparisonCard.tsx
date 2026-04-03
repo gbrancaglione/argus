@@ -3,6 +3,7 @@ type PeriodComparisonCardProps = {
   currentValue: string;
   currentRaw: number;
   previousRaw: number;
+  previousValue?: string;
   invertColor?: boolean; // true = decrease is good (spending)
 };
 
@@ -11,6 +12,7 @@ export default function PeriodComparisonCard({
   currentValue,
   currentRaw,
   previousRaw,
+  previousValue,
   invertColor = true,
 }: PeriodComparisonCardProps) {
   const diff = previousRaw > 0
@@ -40,7 +42,9 @@ export default function PeriodComparisonCard({
           >
             {Math.abs(diff).toFixed(1)}%
           </span>
-          <span className="text-xs text-neutral-medium">vs anterior</span>
+          <span className="text-xs text-neutral-medium">
+            vs {previousValue ? previousValue : "anterior"}
+          </span>
         </div>
       )}
     </div>

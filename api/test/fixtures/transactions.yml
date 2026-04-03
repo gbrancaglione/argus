@@ -72,6 +72,66 @@ uncategorized_expense:
   status: "POSTED"
   raw_data: {}
 
+feb_grocery:
+  account: santander_credit
+  external_id: "tx-feb-1"
+  date: "2026-02-10"
+  amount: 200.00
+  amount_brl: 200.00
+  currency_code: "BRL"
+  description: "Supermercado Dia"
+  original_category: "Groceries"
+  label: groceries
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+feb_restaurant:
+  account: santander_credit
+  external_id: "tx-feb-2"
+  date: "2026-02-15"
+  amount: 120.00
+  amount_brl: 120.00
+  currency_code: "BRL"
+  description: "Restaurante Beco"
+  original_category: "Food and drinks"
+  label: alimentacao
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+jan_grocery:
+  account: santander_credit
+  external_id: "tx-jan-1"
+  date: "2026-01-05"
+  amount: 175.00
+  amount_brl: 175.00
+  currency_code: "BRL"
+  description: "Supermercado Pão de Açúcar"
+  original_category: "Groceries"
+  label: groceries
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
+jan_shopping:
+  account: santander_credit
+  external_id: "tx-jan-2"
+  date: "2026-01-20"
+  amount: 350.00
+  amount_brl: 350.00
+  currency_code: "BRL"
+  description: "Magazine Luiza"
+  original_category: "Shopping"
+  label: shopping
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
 other_user_tx:
   account: other_user_credit
   external_id: "tx-5"

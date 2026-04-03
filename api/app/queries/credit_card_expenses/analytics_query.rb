@@ -2,10 +2,17 @@ module CreditCardExpenses
   class AnalyticsQuery
     BRL_SUM = "COALESCE(amount_brl, amount)".freeze
 
-    def initialize(user, from:, to:)
+    GRANULARITIES = {
+      "month" => "TO_CHAR(date, 'YYYY-MM')",
+      "week"  => "TO_CHAR(date, 'IYYY-\"W\"IW')",
+      "day"   => "TO_CHAR(date, 'YYYY-MM-DD')"
+    }.freeze
+
+    def initialize(user, from:, to:, granularity: "month")
       @user = user
       @from = from
       @to = to
+      @granularity = GRANULARITIES.key?(granularity) ? granularity : "month"
     end
 
     def call
@@ -57,22 +64,26 @@ module CreditCardExpenses
       (Date.parse(@from.to_s) - 1).to_s
     end
 
+    def group_expr
+      GRANULARITIES[@granularity]
+    end
+
     def monthly_trend
       expenses(@from, @to)
-        .group(Arel.sql("TO_CHAR(date, 'YYYY-MM')"))
-        .select(Arel.sql("TO_CHAR(date, 'YYYY-MM') as month, SUM(#{BRL_SUM}) as spent, COUNT(*) as count"))
-        .order(Arel.sql("month"))
-        .to_h { |r| [r.month, { spent: r.spent.to_f.round(2), count: r.count }] }
+        .group(Arel.sql(group_expr))
+        .select(Arel.sql("#{group_expr} as period, SUM(#{BRL_SUM}) as spent, COUNT(*) as count"))
+        .order(Arel.sql("period"))
+        .to_h { |r| [r.period, { spent: r.spent.to_f.round(2), count: r.count }] }
     end
 
     def category_monthly_trend
       expenses(@from, @to)
         .left_joins(:label)
-        .group("labels.name", Arel.sql("TO_CHAR(date, 'YYYY-MM')"))
-        .select(Arel.sql("labels.name as category, TO_CHAR(date, 'YYYY-MM') as month, SUM(#{BRL_SUM}) as spent"))
-        .order(Arel.sql("month"))
+        .group("labels.name", Arel.sql(group_expr))
+        .select(Arel.sql("labels.name as category, #{group_expr} as period, SUM(#{BRL_SUM}) as spent"))
+        .order(Arel.sql("period"))
         .group_by(&:category)
-        .transform_values { |rows| rows.to_h { |r| [r.month, r.spent.to_f.round(2)] } }
+        .transform_values { |rows| rows.to_h { |r| [r.period, r.spent.to_f.round(2)] } }
     end
 
     def top_categories

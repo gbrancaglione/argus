@@ -24,9 +24,27 @@ const MONTH_NAMES: Record<string, string> = {
   "09": "Set", "10": "Out", "11": "Nov", "12": "Dez",
 };
 
+function formatPeriodKey(key: string) {
+  // YYYY-MM → "Jan", "Fev", etc.
+  if (/^\d{4}-\d{2}$/.test(key)) {
+    const [, m] = key.split("-");
+    return MONTH_NAMES[m] ?? m;
+  }
+  // YYYY-Wnn → "W14"
+  if (/^\d{4}-W\d{2}$/.test(key)) {
+    return key.split("-")[1];
+  }
+  // YYYY-MM-DD → "15/03"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+    const [, m, d] = key.split("-");
+    return `${d}/${m}`;
+  }
+  return key;
+}
+
+// Keep backward compat alias
 function formatMonth(yyyyMm: string) {
-  const [, m] = yyyyMm.split("-");
-  return MONTH_NAMES[m] ?? m;
+  return formatPeriodKey(yyyyMm);
 }
 
 type SpendingTrendChartProps = {

@@ -20,6 +20,7 @@ Rails.application.routes.draw do
       collection do
         get :summary
         get :analytics
+        get :spending_pace
       end
     end
   end

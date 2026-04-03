@@ -7,6 +7,7 @@ import type {
   LocalTransactionsResponse,
   CreditCardSummary,
   AnalyticsData,
+  SpendingPaceData,
   SyncLog,
   LocalAccount,
   Label,
@@ -98,12 +99,19 @@ export function fetchCreditCardSummary(params: {
 export function fetchCreditCardAnalytics(params: {
   from: string;
   to: string;
+  granularity?: string;
 }) {
   const query = new URLSearchParams({
     from: params.from,
     to: params.to,
   });
+  if (params.granularity) query.set("granularity", params.granularity);
   return apiRequest<AnalyticsData>(`/credit_card_expenses/analytics?${query}`);
+}
+
+export function fetchSpendingPace(months = 6) {
+  const query = new URLSearchParams({ months: String(months) });
+  return apiRequest<SpendingPaceData>(`/credit_card_expenses/spending_pace?${query}`);
 }
 
 export function fetchLabels() {

@@ -1,19 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchCreditCardSummary, fetchSyncLogs } from "../api/spending";
+import { fetchCreditCardSummary, fetchSpendingPace, fetchSyncLogs } from "../api/spending";
 import { formatBRL } from "../utils/format";
-import type { CreditCardSummary, SyncLog } from "../types/spending";
-import SummaryCard from "../components/SummaryCard";
+import type { CreditCardSummary, SpendingPaceData, SyncLog } from "../types/spending";
+import PeriodComparisonCard from "../components/PeriodComparisonCard";
+import SpendingPaceChart from "../components/SpendingPaceChart";
 
 function formatDate(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
-function currentMonthRange(): { from: string; to: string } {
-  const now = new Date();
-  const from = new Date(now.getFullYear(), now.getMonth(), 1);
-  const to = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  return { from: formatDate(from), to: formatDate(to) };
 }
 
 function formatDateBR(dateStr: string) {
@@ -23,19 +17,37 @@ function formatDateBR(dateStr: string) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [summary, setSummary] = useState<CreditCardSummary | null>(null);
+  const [currentSummary, setCurrentSummary] = useState<CreditCardSummary | null>(null);
+  const [lastMonthSummary, setLastMonthSummary] = useState<CreditCardSummary | null>(null);
+  const [paceData, setPaceData] = useState<SpendingPaceData | null>(null);
   const [lastSync, setLastSync] = useState<SyncLog | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const range = currentMonthRange();
-        const [summaryRes, logs] = await Promise.all([
-          fetchCreditCardSummary(range),
+        const now = new Date();
+        const today = formatDate(now);
+        const firstOfMonth = formatDate(new Date(now.getFullYear(), now.getMonth(), 1));
+
+        // Same day last month
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const firstOfLastMonth = formatDate(lastMonthDate);
+        const sameDayLastMonth = formatDate(
+          new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth(), Math.min(now.getDate(), new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 0).getDate()))
+        );
+
+        const [currentRes, lastMonthRes, paceRes, logs] = await Promise.all([
+          fetchCreditCardSummary({ from: firstOfMonth, to: today }),
+          fetchCreditCardSummary({ from: firstOfLastMonth, to: sameDayLastMonth }),
+          fetchSpendingPace(6),
           fetchSyncLogs(),
         ]);
-        setSummary(summaryRes);
+
+        setCurrentSummary(currentRes);
+        setLastMonthSummary(lastMonthRes);
+        setPaceData(paceRes);
+
         const completedLogs = logs.filter((l) => l.status === "completed");
         if (completedLogs.length > 0) setLastSync(completedLogs[0]);
       } catch (err) {
@@ -47,13 +59,29 @@ export default function Dashboard() {
     load();
   }, []);
 
-  const topCategories = summary?.by_category.slice(0, 3) ?? [];
+  const currentTotal = currentSummary?.total_spent ?? 0;
+  const lastMonthTotal = lastMonthSummary?.total_spent ?? 0;
+
+  // Projected month total
+  const now = new Date();
+  const todayDay = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const projected = todayDay > 0 ? (currentTotal / todayDay) * daysInMonth : 0;
+
+  const topCategories = currentSummary?.by_category.slice(0, 3) ?? [];
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
-      <h2 className="font-heading text-xl font-black text-neutral-darkest mb-6">
-        Dashboard
-      </h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="font-heading text-xl font-black text-neutral-darkest">
+          Dashboard
+        </h2>
+        {lastSync && (
+          <span className="text-xs text-neutral-medium">
+            Última sincronização: {formatDateBR(lastSync.started_at.split("T")[0])}
+          </span>
+        )}
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-16">
@@ -63,23 +91,43 @@ export default function Dashboard() {
         <>
           {/* Summary cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <SummaryCard
+            <PeriodComparisonCard
               label="Gasto este mês"
-              value={formatBRL(summary?.total_spent ?? 0)}
+              currentValue={formatBRL(currentTotal)}
+              currentRaw={currentTotal}
+              previousRaw={lastMonthTotal}
+              previousValue={formatBRL(lastMonthTotal)}
             />
-            <SummaryCard
+            <PeriodComparisonCard
               label="Transações"
-              value={String(summary?.transaction_count ?? 0)}
+              currentValue={String(currentSummary?.transaction_count ?? 0)}
+              currentRaw={currentSummary?.transaction_count ?? 0}
+              previousRaw={lastMonthSummary?.transaction_count ?? 0}
+              previousValue={String(lastMonthSummary?.transaction_count ?? 0)}
             />
-            <SummaryCard
-              label="Última sincronização"
-              value={
-                lastSync
-                  ? formatDateBR(lastSync.started_at.split("T")[0])
-                  : "Nenhuma"
-              }
-            />
+            <div className="bg-neutral-white rounded-lg shadow-level-1 px-5 py-4">
+              <p className="text-xs text-neutral-medium mb-1">Projeção do mês</p>
+              <p className="font-heading font-black text-2xl text-neutral-darkest">
+                {formatBRL(projected)}
+              </p>
+              <p className="text-xs text-neutral-medium mt-1">
+                Baseado em {todayDay} dia{todayDay !== 1 ? "s" : ""}
+              </p>
+            </div>
           </div>
+
+          {/* Spending pace chart */}
+          {paceData && (
+            <div className="bg-neutral-white rounded-lg shadow-level-1 p-6 mb-8">
+              <h3 className="font-heading font-black text-lg text-neutral-darkest mb-1">
+                Ritmo de gastos
+              </h3>
+              <p className="text-xs text-neutral-medium mb-4">
+                Gasto acumulado por dia do mês — comparação com meses anteriores
+              </p>
+              <SpendingPaceChart data={paceData} />
+            </div>
+          )}
 
           {/* Top categories */}
           <div className="bg-neutral-white rounded-lg shadow-level-1 p-6 mb-8">
@@ -94,8 +142,8 @@ export default function Dashboard() {
               <div className="space-y-3">
                 {topCategories.map((cat, i) => {
                   const percentage =
-                    summary && summary.total_spent > 0
-                      ? (cat.spent / summary.total_spent) * 100
+                    currentSummary && currentSummary.total_spent > 0
+                      ? (cat.spent / currentSummary.total_spent) * 100
                       : 0;
                   return (
                     <button
