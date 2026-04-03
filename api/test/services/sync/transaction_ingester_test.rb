@@ -247,6 +247,107 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 3, 15), tx.date
   end
 
+  test "extracts installment fields from creditCardMetadata" do
+    tx_data = pluggy_tx("tx-inst", amount: 200.0, description: "GOL LINHAS")
+    tx_data["creditCardMetadata"] = {
+      "installmentNumber" => 2,
+      "totalInstallments" => 6,
+      "purchaseDate" => "2026-01-15T00:00:00.000Z",
+      "cardNumber" => "8660",
+      "payeeMCC" => 3247
+    }
+
+    OpenFinance.client = mock_client([tx_data])
+    Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31").call
+
+    tx = Transaction.find_by(external_id: "tx-inst")
+    assert_equal 2, tx.installment_number
+    assert_equal 6, tx.total_installments
+    assert_equal Date.new(2026, 1, 15), tx.purchase_date
+    assert tx.purchase_key.present?
+  end
+
+  test "projects future installments on create" do
+    tx_data = pluggy_tx("tx-proj", amount: 83.25, description: "AGILECODE")
+    tx_data["creditCardMetadata"] = {
+      "installmentNumber" => 3,
+      "totalInstallments" => 5,
+      "purchaseDate" => "2026-01-16T00:00:00.000Z",
+      "cardNumber" => "8660"
+    }
+
+    OpenFinance.client = mock_client([tx_data])
+    stats = Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31").call
+
+    assert_equal 1, stats[:created]
+    tx = Transaction.find_by(external_id: "tx-proj")
+    projected = Transaction.where(purchase_key: tx.purchase_key, status: "PROJECTED")
+                           .order(:installment_number)
+
+    assert_equal 2, projected.count
+    assert_equal [4, 5], projected.map(&:installment_number)
+    assert projected.all? { |p| p.amount == 83.25.to_d }
+    assert projected.all? { |p| p.description == "AGILECODE" }
+  end
+
+  test "promotes projected transaction when real one arrives" do
+    purchase_date = Date.new(2026, 1, 16)
+    key = Transaction.generate_purchase_key(
+      account_id: @account.id, purchase_date: purchase_date, amount: 83.25
+    )
+
+    projected = Transaction.create!(
+      account: @account,
+      external_id: "projected:#{key}:4",
+      date: Date.new(2026, 4, 15),
+      amount: 83.25,
+      amount_brl: 83.25,
+      transaction_type: "DEBIT",
+      status: "PROJECTED",
+      description: "AGILECODE",
+      installment_number: 4,
+      total_installments: 5,
+      purchase_date: purchase_date,
+      purchase_key: key,
+      raw_data: {}
+    )
+
+    real_data = pluggy_tx("tx-real-4", amount: 83.25, description: "PG *AGILECODE BRANASIO",
+                          date: "2026-04-25T12:00:00Z")
+    real_data["creditCardMetadata"] = {
+      "installmentNumber" => 4,
+      "totalInstallments" => 5,
+      "purchaseDate" => "2026-01-16T00:00:00.000Z",
+      "cardNumber" => "8660"
+    }
+
+    OpenFinance.client = mock_client([real_data])
+    stats = Sync::TransactionIngester.new(@account, from: "2026-04-01", to: "2026-04-30").call
+
+    assert_equal 0, stats[:created]
+    assert_equal 1, stats[:updated]
+
+    projected.reload
+    assert_equal "tx-real-4", projected.external_id
+    assert_equal "POSTED", projected.status
+    assert_equal "PG *AGILECODE BRANASIO", projected.description
+    assert_equal Date.new(2026, 4, 25), projected.date
+  end
+
+  test "does not create transaction without installment data" do
+    OpenFinance.client = mock_client([
+      pluggy_tx("tx-no-inst", amount: 50.0, description: "Coffee")
+    ])
+
+    Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31").call
+
+    tx = Transaction.find_by(external_id: "tx-no-inst")
+    assert_nil tx.installment_number
+    assert_nil tx.total_installments
+    assert_nil tx.purchase_key
+    assert_equal 0, Transaction.projected.count
+  end
+
   private
 
   def pluggy_tx(id, amount: 100.0, description: "Test", category: "Shopping",

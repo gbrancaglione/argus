@@ -41,7 +41,12 @@ module Sync
       tx = Transaction.with_deleted.find_by(external_id: data["id"])
 
       if tx.nil?
-        create_transaction(data)
+        projected = find_projected_match(data)
+        if projected
+          promote_projected(projected, data)
+        else
+          create_transaction(data)
+        end
       elsif tx.deleted?
         @stats[:skipped] += 1
       elsif tx.raw_data != data
@@ -58,8 +63,39 @@ module Sync
       attrs[:label] = resolve_label(attrs[:original_category])
       attrs[:category_edited] = false
 
-      Transaction.create!(attrs)
+      tx = Transaction.create!(attrs)
+      tx.project_future_installments! if tx.installment?
       @stats[:created] += 1
+    end
+
+    def promote_projected(tx, data)
+      attrs = base_attributes(data)
+      attrs[:external_id] = data["id"]
+
+      unless tx.category_edited
+        attrs[:label] = resolve_label(attrs[:original_category])
+      end
+
+      tx.update!(attrs)
+      @stats[:updated] += 1
+    end
+
+    def find_projected_match(data)
+      cc_meta = data["creditCardMetadata"]
+      return nil unless cc_meta&.dig("totalInstallments")
+
+      purchase_date = Date.parse(cc_meta["purchaseDate"])
+      key = Transaction.generate_purchase_key(
+        account_id: @account.id,
+        purchase_date: purchase_date,
+        amount: data["amount"].to_f
+      )
+
+      Transaction.find_by(
+        purchase_key: key,
+        installment_number: cc_meta["installmentNumber"],
+        status: "PROJECTED"
+      )
     end
 
     def update_transaction(tx, data)
@@ -77,8 +113,9 @@ module Sync
     def base_attributes(data)
       amount = data["amount"].to_f
       currency = data["currencyCode"] || "BRL"
+      cc_meta = data["creditCardMetadata"]
 
-      {
+      attrs = {
         date: parse_date(data["date"]),
         amount: amount,
         amount_brl: resolve_brl_amount(amount, currency, data),
@@ -90,6 +127,20 @@ module Sync
         payment_method: data.dig("paymentData", "paymentMethod"),
         raw_data: data
       }
+
+      if cc_meta&.dig("totalInstallments")
+        purchase_date = Date.parse(cc_meta["purchaseDate"])
+        attrs[:installment_number] = cc_meta["installmentNumber"]
+        attrs[:total_installments] = cc_meta["totalInstallments"]
+        attrs[:purchase_date] = purchase_date
+        attrs[:purchase_key] = Transaction.generate_purchase_key(
+          account_id: @account.id,
+          purchase_date: purchase_date,
+          amount: amount
+        )
+      end
+
+      attrs
     end
 
     def resolve_brl_amount(amount, currency, data)

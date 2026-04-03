@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -69,18 +69,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_100000) do
     t.datetime "deleted_at"
     t.string "description"
     t.string "external_id", null: false
+    t.integer "installment_number"
     t.bigint "label_id"
     t.string "original_category"
     t.string "payment_method"
+    t.date "purchase_date"
+    t.string "purchase_key"
     t.jsonb "raw_data", default: {}
     t.string "status"
+    t.integer "total_installments"
     t.string "transaction_type", null: false
     t.datetime "updated_at", null: false
     t.index ["account_id", "date"], name: "index_transactions_on_account_id_and_date"
+    t.index ["account_id", "purchase_key", "installment_number"], name: "idx_transactions_installment_lookup"
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["deleted_at"], name: "index_transactions_on_deleted_at"
     t.index ["external_id"], name: "index_transactions_on_external_id", unique: true
     t.index ["label_id"], name: "index_transactions_on_label_id"
+    t.index ["purchase_key"], name: "index_transactions_on_purchase_key"
   end
 
   create_table "users", force: :cascade do |t|

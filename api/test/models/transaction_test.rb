@@ -116,4 +116,116 @@ class TransactionTest < ActiveSupport::TestCase
     tx.soft_delete!
     assert_includes Transaction.with_deleted.all, tx
   end
+
+  test "installment? returns true when total_installments > 1" do
+    tx = transactions(:grocery_expense)
+    tx.total_installments = 6
+    tx.installment_number = 1
+    assert tx.installment?
+  end
+
+  test "installment? returns false when total_installments is nil" do
+    assert_not transactions(:grocery_expense).installment?
+  end
+
+  test "projected? returns true when status is PROJECTED" do
+    tx = transactions(:grocery_expense)
+    tx.status = "PROJECTED"
+    assert tx.projected?
+  end
+
+  test "projected scope returns only projected transactions" do
+    tx = transactions(:grocery_expense)
+    tx.update!(status: "PROJECTED")
+    assert_includes Transaction.projected, tx
+    assert_not_includes Transaction.not_projected, tx
+  end
+
+  test "generate_purchase_key is deterministic" do
+    key1 = Transaction.generate_purchase_key(account_id: 1, purchase_date: "2026-01-15", amount: 100.0)
+    key2 = Transaction.generate_purchase_key(account_id: 1, purchase_date: "2026-01-15", amount: 100.0)
+    assert_equal key1, key2
+  end
+
+  test "generate_purchase_key differs for different inputs" do
+    key1 = Transaction.generate_purchase_key(account_id: 1, purchase_date: "2026-01-15", amount: 100.0)
+    key2 = Transaction.generate_purchase_key(account_id: 1, purchase_date: "2026-01-15", amount: 200.0)
+    assert_not_equal key1, key2
+  end
+
+  test "project_future_installments! creates remaining installments" do
+    account = accounts(:santander_credit)
+    key = Transaction.generate_purchase_key(account_id: account.id, purchase_date: "2026-01-10", amount: 100.0)
+
+    tx = Transaction.create!(
+      account: account,
+      external_id: "inst-source",
+      date: Date.new(2026, 3, 15),
+      amount: 100.0,
+      amount_brl: 100.0,
+      transaction_type: "DEBIT",
+      status: "POSTED",
+      installment_number: 3,
+      total_installments: 5,
+      purchase_date: Date.new(2026, 1, 10),
+      purchase_key: key,
+      raw_data: {}
+    )
+
+    tx.project_future_installments!
+
+    projected = Transaction.where(purchase_key: key, status: "PROJECTED").order(:installment_number)
+    assert_equal 2, projected.count
+    assert_equal [4, 5], projected.map(&:installment_number)
+    assert_equal [Date.new(2026, 4, 15), Date.new(2026, 5, 15)], projected.map(&:date)
+    assert projected.all? { |p| p.amount == 100.0 }
+  end
+
+  test "project_future_installments! is idempotent" do
+    account = accounts(:santander_credit)
+    key = Transaction.generate_purchase_key(account_id: account.id, purchase_date: "2026-01-10", amount: 50.0)
+
+    tx = Transaction.create!(
+      account: account,
+      external_id: "inst-idemp",
+      date: Date.new(2026, 3, 15),
+      amount: 50.0,
+      amount_brl: 50.0,
+      transaction_type: "DEBIT",
+      status: "POSTED",
+      installment_number: 2,
+      total_installments: 4,
+      purchase_date: Date.new(2026, 1, 10),
+      purchase_key: key,
+      raw_data: {}
+    )
+
+    tx.project_future_installments!
+    tx.project_future_installments!
+
+    assert_equal 2, Transaction.where(purchase_key: key, status: "PROJECTED").count
+  end
+
+  test "project_future_installments! skips when already at last installment" do
+    account = accounts(:santander_credit)
+    key = Transaction.generate_purchase_key(account_id: account.id, purchase_date: "2026-01-10", amount: 75.0)
+
+    tx = Transaction.create!(
+      account: account,
+      external_id: "inst-last",
+      date: Date.new(2026, 3, 15),
+      amount: 75.0,
+      amount_brl: 75.0,
+      transaction_type: "DEBIT",
+      status: "POSTED",
+      installment_number: 4,
+      total_installments: 4,
+      purchase_date: Date.new(2026, 1, 10),
+      purchase_key: key,
+      raw_data: {}
+    )
+
+    tx.project_future_installments!
+    assert_equal 0, Transaction.where(purchase_key: key, status: "PROJECTED").count
+  end
 end
