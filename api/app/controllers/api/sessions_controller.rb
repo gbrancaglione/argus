@@ -6,7 +6,7 @@ module Api
       if user&.authenticate(params[:password])
         token = JsonWebToken.encode(user_id: user.id)
         set_auth_cookie(token)
-        render json: { user: { id: user.id, email: user.email } }
+        render json: { user: { id: user.id, email: user.email }, token: token }
       else
         render json: { error: "Invalid email or password" }, status: :unauthorized
       end
