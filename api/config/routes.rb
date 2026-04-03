@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     resources :credit_card_expenses, only: [:index] do
       collection do
         get :summary
+        get :analytics
       end
     end
   end

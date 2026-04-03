@@ -91,6 +91,29 @@ export type SyncLog = {
   finished_at: string | null;
 };
 
+export type PeriodStats = {
+  total_spent: number;
+  transaction_count: number;
+  daily_average: number;
+  from: string;
+  to: string;
+};
+
+export type TopCategory = {
+  category: string | null;
+  spent: number;
+  count: number;
+  percentage: number;
+};
+
+export type AnalyticsData = {
+  current_period: PeriodStats;
+  previous_period: PeriodStats;
+  monthly_trend: Record<string, PeriodSummary>;
+  category_trend: Record<string, Record<string, number>>;
+  top_categories: TopCategory[];
+};
+
 export type LocalAccount = {
   id: number;
   external_id: string;

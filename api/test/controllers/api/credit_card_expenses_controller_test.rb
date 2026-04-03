@@ -102,6 +102,48 @@ class Api::CreditCardExpensesControllerTest < ActionDispatch::IntegrationTest
     assert body["total_spent"] >= 0
   end
 
+  test "filters by label_name param" do
+    get "#{api_credit_card_expenses_path}?from=2026-03-01&to=2026-03-31&label_name=Groceries",
+      headers: @auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body["results"].size
+    assert_equal "Supermercado Extra", body["results"].first["description"]
+  end
+
+  test "filters uncategorized transactions with label_name param" do
+    get "#{api_credit_card_expenses_path}?from=2026-03-01&to=2026-03-31&label_name=uncategorized",
+      headers: @auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 1, body["results"].size
+    assert_equal "Padaria Pão Quente", body["results"].first["description"]
+  end
+
+  test "analytics returns structured data" do
+    get "#{analytics_api_credit_card_expenses_path}?from=2026-03-01&to=2026-03-31",
+      headers: @auth_headers
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_kind_of Hash, body["current_period"]
+    assert_kind_of Hash, body["previous_period"]
+    assert_kind_of Hash, body["monthly_trend"]
+    assert_kind_of Hash, body["category_trend"]
+    assert_kind_of Array, body["top_categories"]
+
+    assert body["current_period"]["total_spent"].is_a?(Numeric)
+    assert body["current_period"]["transaction_count"].is_a?(Integer)
+    assert body["current_period"]["daily_average"].is_a?(Numeric)
+  end
+
+  test "analytics requires authentication" do
+    get "#{analytics_api_credit_card_expenses_path}?from=2026-03-01&to=2026-03-31"
+    assert_response :unauthorized
+  end
+
   test "requires from and to params" do
     get api_credit_card_expenses_path, headers: @auth_headers
 

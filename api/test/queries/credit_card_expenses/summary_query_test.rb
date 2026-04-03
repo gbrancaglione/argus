@@ -10,8 +10,8 @@ class CreditCardExpenses::SummaryQueryTest < ActiveSupport::TestCase
       @user, from: "2026-03-01", to: "2026-03-31"
     ).call
 
-    # grocery(150) + restaurant(85.50) + foreign(280 brl) = 515.50
-    assert_equal 515.5, result[:total_spent]
+    # grocery(150) + restaurant(85.50) + foreign(280 brl) + uncategorized(45) = 560.50
+    assert_equal 560.5, result[:total_spent]
   end
 
   test "returns transaction count excluding card payments" do
@@ -19,7 +19,7 @@ class CreditCardExpenses::SummaryQueryTest < ActiveSupport::TestCase
       @user, from: "2026-03-01", to: "2026-03-31"
     ).call
 
-    assert_equal 3, result[:transaction_count]
+    assert_equal 4, result[:transaction_count]
   end
 
   test "returns monthly breakdown" do
@@ -28,8 +28,8 @@ class CreditCardExpenses::SummaryQueryTest < ActiveSupport::TestCase
     ).call
 
     assert result[:monthly].key?("2026-03")
-    assert_equal 515.5, result[:monthly]["2026-03"][:spent]
-    assert_equal 3, result[:monthly]["2026-03"][:count]
+    assert_equal 560.5, result[:monthly]["2026-03"][:spent]
+    assert_equal 4, result[:monthly]["2026-03"][:count]
   end
 
   test "returns daily breakdown" do
@@ -49,6 +49,7 @@ class CreditCardExpenses::SummaryQueryTest < ActiveSupport::TestCase
     categories = result[:by_category].map { |c| c[:category] }
     assert_includes categories, "Groceries"
     assert_includes categories, "Shopping"
+    assert_includes categories, nil  # uncategorized transaction
     assert_not_includes categories, "Credit card payment"
   end
 

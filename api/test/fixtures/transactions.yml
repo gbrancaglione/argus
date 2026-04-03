@@ -58,6 +58,20 @@ foreign_expense:
   status: "POSTED"
   raw_data: {}
 
+uncategorized_expense:
+  account: santander_credit
+  external_id: "tx-6"
+  date: "2026-03-17"
+  amount: 45.00
+  amount_brl: 45.00
+  currency_code: "BRL"
+  description: "Padaria Pão Quente"
+  original_category: "Food"
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  raw_data: {}
+
 other_user_tx:
   account: other_user_credit
   external_id: "tx-5"

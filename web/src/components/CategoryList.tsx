@@ -4,9 +4,10 @@ import { formatBRL } from "../utils/format";
 type CategoryListProps = {
   categories: CategoryBreakdown[];
   totalSpent: number;
+  onSelect: (category: string | null) => void;
 };
 
-export default function CategoryList({ categories, totalSpent }: CategoryListProps) {
+export default function CategoryList({ categories, totalSpent, onSelect }: CategoryListProps) {
   if (categories.length === 0) {
     return (
       <p className="text-neutral-medium text-sm py-8 text-center">
@@ -20,9 +21,10 @@ export default function CategoryList({ categories, totalSpent }: CategoryListPro
       {categories.map((cat) => {
         const percentage = totalSpent > 0 ? (cat.spent / totalSpent) * 100 : 0;
         return (
-          <div
+          <button
             key={cat.category ?? "uncategorized"}
-            className="bg-neutral-white rounded-lg shadow-level-1 px-5 py-4"
+            onClick={() => onSelect(cat.category)}
+            className="bg-neutral-white rounded-lg shadow-level-1 px-5 py-4 w-full text-left cursor-pointer hover:bg-neutral-bg transition-colors"
           >
             <div className="flex items-center justify-between mb-2">
               <div>
@@ -46,7 +48,7 @@ export default function CategoryList({ categories, totalSpent }: CategoryListPro
             <span className="text-xs text-neutral-medium mt-1 block">
               {percentage.toFixed(1)}%
             </span>
-          </div>
+          </button>
         );
       })}
     </div>
