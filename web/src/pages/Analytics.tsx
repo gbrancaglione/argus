@@ -287,7 +287,7 @@ export default function Analytics() {
             <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
               Tendência por categoria
             </h3>
-            <CategoryTrendChart data={data.category_trend} months={periods} />
+            <CategoryTrendChart key={from + to + granularity} data={data.category_trend} months={periods} />
           </div>
 
           {/* Two-column: Top categories + Month over month */}
