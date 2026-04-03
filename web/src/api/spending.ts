@@ -6,6 +6,7 @@ import type {
   LocalTransaction,
   LocalTransactionsResponse,
   CreditCardSummary,
+  AnalyticsData,
   SyncLog,
   LocalAccount,
   Label,
@@ -71,6 +72,7 @@ export function fetchCreditCardExpenses(params: {
   to: string;
   page?: number;
   perPage?: number;
+  labelName?: string;
 }) {
   const query = new URLSearchParams({
     from: params.from,
@@ -78,6 +80,7 @@ export function fetchCreditCardExpenses(params: {
     page: String(params.page ?? 1),
     per_page: String(params.perPage ?? 50),
   });
+  if (params.labelName) query.set("label_name", params.labelName);
   return apiRequest<LocalTransactionsResponse>(`/credit_card_expenses?${query}`);
 }
 
@@ -90,6 +93,17 @@ export function fetchCreditCardSummary(params: {
     to: params.to,
   });
   return apiRequest<CreditCardSummary>(`/credit_card_expenses/summary?${query}`);
+}
+
+export function fetchCreditCardAnalytics(params: {
+  from: string;
+  to: string;
+}) {
+  const query = new URLSearchParams({
+    from: params.from,
+    to: params.to,
+  });
+  return apiRequest<AnalyticsData>(`/credit_card_expenses/analytics?${query}`);
 }
 
 export function fetchLabels() {

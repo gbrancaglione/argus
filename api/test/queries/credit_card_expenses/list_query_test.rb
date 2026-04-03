@@ -42,7 +42,7 @@ class CreditCardExpenses::ListQueryTest < ActiveSupport::TestCase
 
     assert_equal 2, result[:results].size
     assert_equal 1, result[:page]
-    assert_equal 3, result[:total]
+    assert_equal 4, result[:total]
     assert_equal 2, result[:total_pages]
   end
 
@@ -51,7 +51,7 @@ class CreditCardExpenses::ListQueryTest < ActiveSupport::TestCase
       @user, from: "2026-03-01", to: "2026-03-31", page: 2, per_page: 2
     ).call
 
-    assert_equal 1, result[:results].size
+    assert_equal 2, result[:results].size
     assert_equal 2, result[:page]
   end
 
@@ -62,6 +62,32 @@ class CreditCardExpenses::ListQueryTest < ActiveSupport::TestCase
 
     dates = result[:results].map(&:date)
     assert_equal dates, dates.sort.reverse
+  end
+
+  test "filters by label_name when provided" do
+    result = CreditCardExpenses::ListQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31", label_name: "Groceries"
+    ).call
+
+    assert_equal 1, result[:total]
+    assert_equal "Supermercado Extra", result[:results].first.description
+  end
+
+  test "filters uncategorized transactions" do
+    result = CreditCardExpenses::ListQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31", label_name: "uncategorized"
+    ).call
+
+    assert_equal 1, result[:total]
+    assert_equal "Padaria Pão Quente", result[:results].first.description
+  end
+
+  test "returns all transactions when label_name not provided" do
+    result = CreditCardExpenses::ListQuery.new(
+      @user, from: "2026-03-01", to: "2026-03-31"
+    ).call
+
+    assert_equal 4, result[:total]
   end
 
   test "returns minimum total_pages of 1 when no results" do

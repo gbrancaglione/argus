@@ -1,11 +1,12 @@
 module CreditCardExpenses
   class ListQuery
-    def initialize(user, from:, to:, page: 1, per_page: 50)
+    def initialize(user, from:, to:, page: 1, per_page: 50, label_name: nil)
       @user = user
       @from = from
       @to = to
       @page = page.to_i
       @per_page = per_page.to_i
+      @label_name = label_name
     end
 
     def call
@@ -26,9 +27,21 @@ module CreditCardExpenses
     private
 
     def base_scope
-      @base_scope ||= credit_card_expenses
-        .in_date_range(@from, @to)
-        .order(date: :desc, created_at: :desc)
+      @base_scope ||= begin
+        scope = credit_card_expenses
+          .in_date_range(@from, @to)
+          .order(date: :desc, created_at: :desc)
+        scope = apply_label_filter(scope) if @label_name.present?
+        scope
+      end
+    end
+
+    def apply_label_filter(scope)
+      if @label_name == "uncategorized"
+        scope.where(label_id: nil)
+      else
+        scope.joins(:label).where(labels: { name: @label_name })
+      end
     end
 
     def credit_card_expenses
