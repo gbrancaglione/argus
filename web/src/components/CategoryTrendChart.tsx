@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -64,10 +64,14 @@ export default function CategoryTrendChart({ data, months }: CategoryTrendChartP
       .sort((a, b) => b.total - a.total);
   }, [data]);
 
-  // Default: top 5 selected
+  // Default: top 5 selected, reset when data changes
   const [selected, setSelected] = useState<Set<string>>(() =>
     new Set(sortedCategories.slice(0, 5).map((c) => c.name))
   );
+
+  useEffect(() => {
+    setSelected(new Set(sortedCategories.slice(0, 5).map((c) => c.name)));
+  }, [sortedCategories]);
 
   function toggleCategory(cat: string) {
     setSelected((prev) => {
