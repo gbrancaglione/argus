@@ -82,7 +82,7 @@ module Sync
 
     def find_projected_match(data)
       cc_meta = data["creditCardMetadata"]
-      return nil unless cc_meta&.dig("totalInstallments")
+      return nil unless cc_meta&.dig("totalInstallments") && cc_meta["purchaseDate"]
 
       purchase_date = Date.parse(cc_meta["purchaseDate"])
       key = Transaction.generate_purchase_key(
@@ -128,7 +128,7 @@ module Sync
         raw_data: data
       }
 
-      if cc_meta&.dig("totalInstallments")
+      if cc_meta&.dig("totalInstallments") && cc_meta["purchaseDate"]
         purchase_date = Date.parse(cc_meta["purchaseDate"])
         attrs[:installment_number] = cc_meta["installmentNumber"]
         attrs[:total_installments] = cc_meta["totalInstallments"]

@@ -24,6 +24,7 @@ namespace :installments do
                .where("raw_data->'creditCardMetadata'->>'totalInstallments' IS NOT NULL")
                .find_each do |tx|
       meta = tx.raw_data["creditCardMetadata"]
+      next unless meta["purchaseDate"]
       purchase_date = Date.parse(meta["purchaseDate"])
 
       tx.update!(

@@ -36,7 +36,7 @@ class Transaction < ApplicationRecord
   end
 
   def installment?
-    total_installments.present? && total_installments > 1
+    total_installments.present? && total_installments > 1 && installment_number.present?
   end
 
   def project_future_installments!

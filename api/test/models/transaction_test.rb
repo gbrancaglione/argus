@@ -117,7 +117,7 @@ class TransactionTest < ActiveSupport::TestCase
     assert_includes Transaction.with_deleted.all, tx
   end
 
-  test "installment? returns true when total_installments > 1" do
+  test "installment? returns true when total_installments > 1 and installment_number present" do
     tx = transactions(:grocery_expense)
     tx.total_installments = 6
     tx.installment_number = 1
@@ -126,6 +126,13 @@ class TransactionTest < ActiveSupport::TestCase
 
   test "installment? returns false when total_installments is nil" do
     assert_not transactions(:grocery_expense).installment?
+  end
+
+  test "installment? returns false when installment_number is nil" do
+    tx = transactions(:grocery_expense)
+    tx.total_installments = 6
+    tx.installment_number = nil
+    assert_not tx.installment?
   end
 
   test "projected? returns true when status is PROJECTED" do
