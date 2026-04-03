@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "argus": {
+      "command": "node",
+      "args": ["mcp/dist/index.js"],
+      "env": {
+        "ARGUS_API_URL": "http://localhost:3000/api"
+      }
+    }
+  }
+}

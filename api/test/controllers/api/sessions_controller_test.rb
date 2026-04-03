@@ -7,6 +7,7 @@ class Api::SessionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "admin@argus.com", body.dig("user", "email")
+    assert body["token"].present?
     assert response.cookies["jwt"].present?
   end
 

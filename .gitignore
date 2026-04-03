@@ -3,6 +3,7 @@ node_modules/
 
 # Build output
 web/dist/
+mcp/dist/
 
 # Environment
 .env
