@@ -190,7 +190,7 @@ export default function CategoryTrendChart({ data, months }: CategoryTrendChartP
             <Legend
               wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
             />
-            {activeCategories.map((cat, i) => {
+            {activeCategories.map((cat) => {
               const colorIndex = sortedCategories.findIndex((c) => c.name === cat.name);
               return (
                 <Line
