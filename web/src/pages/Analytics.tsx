@@ -89,6 +89,17 @@ export default function Analytics() {
     init();
   }, [init]);
 
+  const currentPeriod = (() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    if (granularity === "day") {
+      const d = String(now.getDate()).padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+    return `${y}-${m}`;
+  })();
+
   const periods = data
     ? Object.keys(data.monthly_trend).sort()
     : [];
@@ -172,6 +183,11 @@ export default function Analytics() {
                 <span className="text-xs text-neutral-medium font-normal ml-2">
                   Clique em um período para detalhes
                 </span>
+                {periods.some((p) => p > currentPeriod) && (
+                  <span className="text-xs text-brand-primary font-normal ml-2">
+                    &middot; Barras claras = projeção
+                  </span>
+                )}
               </h3>
               <GranularityToggle value={granularity} onChange={setGranularity} />
             </div>
@@ -180,6 +196,7 @@ export default function Analytics() {
               categoryTrend={data.category_trend}
               monthlyTotals={periodTotals}
               selectedMonth={selectedMonth}
+              currentPeriod={currentPeriod}
               onMonthClick={granularity === "month" ? handleMonthClick : undefined}
             />
           </div>
@@ -348,7 +365,7 @@ export default function Analytics() {
               <h3 className="font-heading font-black text-lg text-neutral-darkest mb-4">
                 Variação entre períodos
               </h3>
-              <MonthOverMonthTable data={data.monthly_trend} />
+              <MonthOverMonthTable data={data.monthly_trend} currentPeriod={currentPeriod} />
             </div>
           </div>
         </>
