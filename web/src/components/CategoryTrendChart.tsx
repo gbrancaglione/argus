@@ -179,7 +179,7 @@ export default function CategoryTrendChart({ data, months }: CategoryTrendChartP
               width={90}
             />
             <Tooltip
-              formatter={(value: number, name: string) => [formatBRL(value), name]}
+              formatter={(value) => [formatBRL(Number(value)), ""]}
               labelFormatter={(label) => formatPeriodKey(String(label))}
               contentStyle={{
                 borderRadius: 8,

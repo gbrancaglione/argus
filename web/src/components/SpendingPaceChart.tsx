@@ -80,10 +80,10 @@ export default function SpendingPaceChart({ data }: SpendingPaceChartProps) {
           width={90}
         />
         <Tooltip
-          formatter={(value: number, name: string) => {
-            const monthData = data.months[name];
-            const label = monthData?.label ?? name;
-            return [formatBRL(value), label];
+          formatter={(value, name) => {
+            const monthData = data.months[String(name)];
+            const label = monthData?.label ?? String(name);
+            return [formatBRL(Number(value)), label];
           }}
           labelFormatter={(day) => `Dia ${day}`}
           contentStyle={{
