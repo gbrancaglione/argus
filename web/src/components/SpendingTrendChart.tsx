@@ -171,10 +171,10 @@ export default function SpendingTrendChart({
             fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]}
             radius={i === displayCats.length - 1 ? [4, 4, 0, 0] : undefined}
             cursor={onMonthClick ? "pointer" : undefined}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            onClick={(barData: any) => {
-              if (onMonthClick && barData?.month) {
-                onMonthClick(String(barData.month));
+            onClick={(barData) => {
+              const d = barData as unknown as { month?: string };
+              if (onMonthClick && d?.month) {
+                onMonthClick(String(d.month));
               }
             }}
           />

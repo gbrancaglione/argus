@@ -63,8 +63,8 @@ export default function CreditCardExpenses() {
       setCatTotalPages(res.total_pages);
       setCatPage(res.page);
       setCatTotal(res.total);
-    } catch {
-      // fall back silently
+    } catch (err) {
+      console.error("Failed to load category transactions:", err);
     } finally {
       setCatLoading(false);
     }

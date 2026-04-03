@@ -52,8 +52,8 @@ export default function Analytics() {
       setMonthTxs(res.results);
       setMonthTxPage(res.page);
       setMonthTxTotalPages(res.total_pages);
-    } catch {
-      // silent
+    } catch (err) {
+      console.error("Failed to load month transactions:", err);
     } finally {
       setMonthTxLoading(false);
     }
@@ -67,10 +67,13 @@ export default function Analytics() {
     }
     setSelectedMonth(month);
     loadMonthTransactions(month);
-    setTimeout(() => {
-      monthDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
   }
+
+  useEffect(() => {
+    if (selectedMonth) {
+      monthDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [selectedMonth]);
 
   function handleRangeChange(newFrom: string, newTo: string) {
     setRange(newFrom, newTo);

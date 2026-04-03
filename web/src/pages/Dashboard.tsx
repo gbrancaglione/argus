@@ -38,8 +38,8 @@ export default function Dashboard() {
         setSummary(summaryRes);
         const completedLogs = logs.filter((l) => l.status === "completed");
         if (completedLogs.length > 0) setLastSync(completedLogs[0]);
-      } catch {
-        // Silently fail — dashboard is a convenience view
+      } catch (err) {
+        console.error("Failed to load dashboard data:", err);
       } finally {
         setLoading(false);
       }
