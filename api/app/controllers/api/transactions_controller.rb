@@ -32,6 +32,29 @@ module Api
       render json: { error: "#{e.model || 'Resource'} not found" }, status: :not_found
     end
 
+    def bulk_update
+      ids = Array(params[:ids]).map(&:to_i)
+      return render json: { error: "No transaction IDs provided" }, status: :bad_request if ids.empty?
+
+      label = nil
+      updates = {}
+
+      if params.key?(:label_id)
+        label = params[:label_id].present? ? current_user.labels.find(params[:label_id]) : nil
+        updates[:label_id] = label&.id
+        updates[:category_edited] = true
+      end
+
+      return render json: { error: "No updates provided" }, status: :bad_request if updates.empty?
+
+      transactions = current_user.transactions.where(id: ids)
+      transactions.update_all(updates.merge(updated_at: Time.current))
+
+      render json: TransactionSerializer.many(transactions.reload.includes(:label))
+    rescue ActiveRecord::RecordNotFound => e
+      render json: { error: "#{e.model || 'Resource'} not found" }, status: :not_found
+    end
+
     def destroy
       transaction = current_user.transactions.find(params[:id])
       transaction.soft_delete!

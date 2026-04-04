@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { useSync } from "../hooks/useSync";
 import { formatDateBR } from "../utils/format";
 import Button from "../components/Button";
@@ -49,11 +50,19 @@ export default function SyncPage() {
         )}
 
         {lastResult && (
-          <div className="bg-status-success-light text-status-success-dark rounded-lg px-4 py-3 mb-6 text-sm">
-            Sincronização concluída: {lastResult.transactions_created} criadas,{" "}
-            {lastResult.transactions_updated} atualizadas,{" "}
-            {lastResult.transactions_skipped} ignoradas.
-            {" "}({lastResult.accounts_synced} contas sincronizadas)
+          <div className="bg-status-success-light text-status-success-dark rounded-lg px-4 py-3 mb-6 text-sm flex items-center justify-between">
+            <span>
+              Sincronização concluída: {lastResult.transactions_created} criadas,{" "}
+              {lastResult.transactions_updated} atualizadas,{" "}
+              {lastResult.transactions_skipped} ignoradas.
+              {" "}({lastResult.accounts_synced} contas sincronizadas)
+            </span>
+            <Link
+              to={`/sync/${lastResult.id}/review`}
+              className="font-bold underline whitespace-nowrap ml-3"
+            >
+              Revisar transações
+            </Link>
           </div>
         )}
 
@@ -165,43 +174,78 @@ export default function SyncPage() {
               Nenhuma sincronização realizada ainda.
             </p>
           ) : (
-            <div className="space-y-3">
-              {syncLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-center justify-between py-3 border-b border-neutral-lightest last:border-0"
-                >
-                  <div>
-                    <span
-                      className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                        log.status === "completed"
-                          ? "bg-status-success-light text-status-success-dark"
-                          : log.status === "failed"
-                            ? "bg-status-error-light text-status-error-dark"
-                            : "bg-status-warning-light text-status-warning-dark"
-                      }`}
-                    >
-                      {log.status === "completed"
-                        ? "Concluído"
-                        : log.status === "failed"
-                          ? "Falhou"
-                          : "Executando"}
-                    </span>
-                    <span className="ml-3 text-sm text-neutral-darkest">
-                      {formatDateBR(log.from_date)} — {formatDateBR(log.to_date)}
-                    </span>
-                  </div>
-                  <div className="text-right text-xs text-neutral-medium">
+            <div className="space-y-1">
+              {syncLogs.map((log) => {
+                const isClickable = log.status === "completed" &&
+                  log.approval_status !== "rejected" &&
+                  (log.transactions_created > 0 || log.transactions_updated > 0);
+
+                const content = (
+                  <>
                     <div>
-                      {log.transactions_created} criadas / {log.transactions_updated}{" "}
-                      atualizadas
+                      <span
+                        className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                          log.status === "failed"
+                            ? "bg-status-error-light text-status-error-dark"
+                            : log.approval_status === "pending"
+                              ? "bg-status-warning-light text-status-warning-dark"
+                              : log.approval_status === "rejected"
+                                ? "bg-status-error-light text-status-error-dark"
+                                : log.approval_status === "approved"
+                                  ? "bg-status-success-light text-status-success-dark"
+                                  : "bg-status-warning-light text-status-warning-dark"
+                        }`}
+                      >
+                        {log.status === "failed"
+                          ? "Falhou"
+                          : log.status === "running"
+                            ? "Executando"
+                            : log.approval_status === "pending"
+                              ? "Pendente"
+                              : log.approval_status === "rejected"
+                                ? "Rejeitado"
+                                : "Aprovado"}
+                      </span>
+                      <span className="ml-3 text-sm text-neutral-darkest">
+                        {formatDateBR(log.from_date)} — {formatDateBR(log.to_date)}
+                      </span>
                     </div>
-                    {log.error_message && (
-                      <div className="text-status-error">{log.error_message}</div>
-                    )}
+                    <div className="flex items-center gap-3">
+                      <div className="text-right text-xs text-neutral-medium">
+                        <div>
+                          {log.transactions_created} criadas / {log.transactions_updated}{" "}
+                          atualizadas
+                        </div>
+                        {log.error_message && (
+                          <div className="text-status-error">{log.error_message}</div>
+                        )}
+                      </div>
+                      {isClickable && (
+                        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" className="text-neutral-medium flex-shrink-0">
+                          <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                  </>
+                );
+
+                return isClickable ? (
+                  <Link
+                    key={log.id}
+                    to={`/sync/${log.id}/review`}
+                    className="flex items-center justify-between py-3 px-3 -mx-3 rounded-lg hover:bg-neutral-bg transition-colors"
+                  >
+                    {content}
+                  </Link>
+                ) : (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between py-3"
+                  >
+                    {content}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

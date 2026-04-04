@@ -334,6 +334,96 @@ class Sync::TransactionIngesterTest < ActiveSupport::TestCase
     assert_equal Date.new(2026, 4, 25), projected.date
   end
 
+  test "sets sync_log and sync_action created on new transactions" do
+    sync_log = @account.user.sync_logs.create!(
+      status: "running", from_date: "2026-03-01", to_date: "2026-03-31", started_at: Time.current
+    )
+    OpenFinance.client = mock_client([
+      pluggy_tx("tx-sl-1", description: "Coffee")
+    ])
+
+    Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31", sync_log: sync_log).call
+
+    tx = Transaction.find_by(external_id: "tx-sl-1")
+    assert_equal sync_log.id, tx.sync_log_id
+    assert_equal "created", tx.sync_action
+  end
+
+  test "sets sync_log and sync_action updated on changed transactions" do
+    sync_log = @account.user.sync_logs.create!(
+      status: "running", from_date: "2026-03-01", to_date: "2026-03-31", started_at: Time.current
+    )
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
+    Transaction.create!(
+      account: @account, external_id: "tx-sl-upd", date: "2026-03-15",
+      amount: 100.0, amount_brl: 100.0, currency_code: "BRL",
+      description: "Old", original_category: "Shopping", label: shopping_label,
+      category_edited: false, transaction_type: "DEBIT", status: "POSTED",
+      raw_data: pluggy_tx("tx-sl-upd", description: "Old")
+    )
+
+    OpenFinance.client = mock_client([pluggy_tx("tx-sl-upd", description: "New")])
+    Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31", sync_log: sync_log).call
+
+    tx = Transaction.find_by(external_id: "tx-sl-upd")
+    assert_equal sync_log.id, tx.sync_log_id
+    assert_equal "updated", tx.sync_action
+  end
+
+  test "does not set sync_log on skipped transactions" do
+    sync_log = @account.user.sync_logs.create!(
+      status: "running", from_date: "2026-03-01", to_date: "2026-03-31", started_at: Time.current
+    )
+    raw = pluggy_tx("tx-sl-skip")
+    shopping_label = @account.user.labels.find_or_create_by!(name: "Shopping")
+    Transaction.create!(
+      account: @account, external_id: "tx-sl-skip", date: "2026-03-15",
+      amount: 100.0, amount_brl: 100.0, currency_code: "BRL",
+      description: "Test", original_category: "Shopping", label: shopping_label,
+      category_edited: false, transaction_type: "DEBIT", status: "POSTED",
+      raw_data: raw
+    )
+
+    OpenFinance.client = mock_client([raw])
+    Sync::TransactionIngester.new(@account, from: "2026-03-01", to: "2026-03-31", sync_log: sync_log).call
+
+    tx = Transaction.find_by(external_id: "tx-sl-skip")
+    assert_nil tx.sync_log_id
+    assert_nil tx.sync_action
+  end
+
+  test "sets sync_action updated when promoting projected transaction" do
+    sync_log = @account.user.sync_logs.create!(
+      status: "running", from_date: "2026-04-01", to_date: "2026-04-30", started_at: Time.current
+    )
+    purchase_date = Date.new(2026, 1, 16)
+    key = Transaction.generate_purchase_key(
+      account_id: @account.id, purchase_date: purchase_date, amount: 83.25
+    )
+
+    Transaction.create!(
+      account: @account, external_id: "projected:#{key}:4",
+      date: Date.new(2026, 4, 15), amount: 83.25, amount_brl: 83.25,
+      transaction_type: "DEBIT", status: "PROJECTED", description: "AGILECODE",
+      installment_number: 4, total_installments: 5, purchase_date: purchase_date,
+      purchase_key: key, raw_data: {}
+    )
+
+    real_data = pluggy_tx("tx-promo-4", amount: 83.25, description: "PG *AGILECODE",
+                          date: "2026-04-25T12:00:00Z")
+    real_data["creditCardMetadata"] = {
+      "installmentNumber" => 4, "totalInstallments" => 5,
+      "purchaseDate" => "2026-01-16T00:00:00.000Z"
+    }
+
+    OpenFinance.client = mock_client([real_data])
+    Sync::TransactionIngester.new(@account, from: "2026-04-01", to: "2026-04-30", sync_log: sync_log).call
+
+    tx = Transaction.find_by(external_id: "tx-promo-4")
+    assert_equal sync_log.id, tx.sync_log_id
+    assert_equal "updated", tx.sync_action
+  end
+
   test "does not create transaction without installment data" do
     OpenFinance.client = mock_client([
       pluggy_tx("tx-no-inst", amount: 50.0, description: "Coffee")

@@ -13,9 +13,16 @@ Rails.application.routes.draw do
     resources :transactions, only: [:index, :update, :destroy] do
       collection do
         get :summary
+        patch :bulk_update
       end
     end
-    resources :syncs, only: [:create, :index]
+    resources :syncs, only: [:create, :index] do
+      member do
+        patch :approve
+        patch :reject
+      end
+      resources :transactions, only: [:index], controller: "sync_transactions"
+    end
     resources :credit_card_expenses, only: [:index] do
       collection do
         get :summary

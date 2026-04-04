@@ -2,10 +2,11 @@ module Sync
   class TransactionIngester
     MAX_PAGES = 20
 
-    def initialize(account, from:, to:)
+    def initialize(account, from:, to:, sync_log: nil)
       @account = account
       @from = from
       @to = to
+      @sync_log = sync_log
       @stats = { created: 0, updated: 0, skipped: 0 }
     end
 
@@ -62,6 +63,8 @@ module Sync
       attrs[:external_id] = data["id"]
       attrs[:label] = resolve_label(attrs[:original_category])
       attrs[:category_edited] = false
+      attrs[:sync_log] = @sync_log
+      attrs[:sync_action] = "created"
 
       tx = Transaction.create!(attrs)
       tx.project_future_installments! if tx.installment?
@@ -71,6 +74,8 @@ module Sync
     def promote_projected(tx, data)
       attrs = base_attributes(data)
       attrs[:external_id] = data["id"]
+      attrs[:sync_log] = @sync_log
+      attrs[:sync_action] = "updated"
 
       unless tx.category_edited
         attrs[:label] = resolve_label(attrs[:original_category])
@@ -100,6 +105,8 @@ module Sync
 
     def update_transaction(tx, data)
       attrs = base_attributes(data)
+      attrs[:sync_log] = @sync_log
+      attrs[:sync_action] = "updated"
 
       # Only update label if user never manually changed it
       unless tx.category_edited

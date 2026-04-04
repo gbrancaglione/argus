@@ -3,6 +3,7 @@ class Transaction < ApplicationRecord
 
   belongs_to :account
   belongs_to :label, optional: true
+  belongs_to :sync_log, optional: true
 
   validates :external_id, presence: true, uniqueness: true
   validates :date, :amount, :transaction_type, presence: true
@@ -20,6 +21,11 @@ class Transaction < ApplicationRecord
   scope :only_deleted, -> { unscope(where: :deleted_at).where.not(deleted_at: nil) }
   scope :projected, -> { where(status: "PROJECTED") }
   scope :not_projected, -> { where.not(status: "PROJECTED") }
+  scope :visible, -> {
+    where(sync_log_id: nil)
+      .or(where(sync_action: "updated"))
+      .or(where.not(sync_log_id: SyncLog.pending_approval))
+  }
 
   delegate :user, to: :account
 

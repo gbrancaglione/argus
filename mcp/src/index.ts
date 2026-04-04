@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { apiGet } from "./api-client.js";
+import { apiGet, apiPatch } from "./api-client.js";
 
 const server = new McpServer({
   name: "argus",
@@ -95,6 +95,68 @@ server.tool(
   {},
   async () => {
     const data = await apiGet("/syncs");
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "list_sync_transactions",
+  "List transactions created or updated by a specific sync. Use this to review what a sync produced before approving it. Supports filtering by action (created/updated) and pagination.",
+  {
+    sync_id: z.number().describe("ID of the sync log"),
+    sync_action: z
+      .enum(["created", "updated"])
+      .optional()
+      .describe("Filter by sync action: created or updated"),
+    page: z.number().optional().describe("Page number (default 1)"),
+    per_page: z.number().optional().describe("Results per page (default 50)"),
+  },
+  async ({ sync_id, sync_action, page, per_page }) => {
+    const data = await apiGet(`/syncs/${sync_id}/transactions`, {
+      sync_action,
+      page: page?.toString(),
+      per_page: per_page?.toString(),
+    });
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "approve_sync",
+  "Approve a pending sync, making its transactions visible in all views (analytics, credit card expenses, etc.). Only works on syncs with approval_status='pending'.",
+  {
+    sync_id: z.number().describe("ID of the sync log to approve"),
+  },
+  async ({ sync_id }) => {
+    const data = await apiPatch(`/syncs/${sync_id}/approve`);
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "reject_sync",
+  "Reject a pending sync, permanently deleting all its transactions. Only works on syncs with approval_status='pending'. This action cannot be undone.",
+  {
+    sync_id: z.number().describe("ID of the sync log to reject"),
+  },
+  async ({ sync_id }) => {
+    const data = await apiPatch(`/syncs/${sync_id}/reject`);
+    return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
+  }
+);
+
+server.tool(
+  "bulk_categorize",
+  "Update the category label on multiple transactions at once. Sets category_edited=true on all affected transactions. Use after reviewing sync results to fix categories before approving.",
+  {
+    ids: z.array(z.number()).describe("Transaction IDs to update"),
+    label_id: z
+      .number()
+      .nullable()
+      .describe("Label ID to assign, or null to clear the category"),
+  },
+  async ({ ids, label_id }) => {
+    const data = await apiPatch("/transactions/bulk_update", { ids, label_id });
     return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   }
 );

@@ -88,3 +88,38 @@ export async function apiGet<T>(
 
   return res.json() as Promise<T>;
 }
+
+export async function apiPatch<T>(
+  path: string,
+  body?: Record<string, unknown>
+): Promise<T> {
+  if (!jwt) await login();
+
+  const url = `${apiUrl}${path}`;
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${jwt}`,
+    "Content-Type": "application/json",
+  };
+
+  let res = await fetch(url, {
+    method: "PATCH",
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (res.status === 401) {
+    await login();
+    res = await fetch(url, {
+      method: "PATCH",
+      headers: { ...headers, Authorization: `Bearer ${jwt}` },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`API error (${res.status}): ${text}`);
+  }
+
+  return res.json() as Promise<T>;
+}

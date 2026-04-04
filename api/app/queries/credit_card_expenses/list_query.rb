@@ -46,6 +46,7 @@ module CreditCardExpenses
 
     def credit_card_expenses
       @user.transactions
+        .visible
         .joins(:account)
         .includes(:label)
         .where(accounts: { account_type: "CREDIT" })

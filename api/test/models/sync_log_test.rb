@@ -57,6 +57,38 @@ class SyncLogTest < ActiveSupport::TestCase
 
   test "recent scope orders by started_at desc" do
     logs = users(:admin).sync_logs.recent
-    assert_equal logs.first, sync_logs(:completed_sync)
+    assert_equal logs.first, sync_logs(:pending_sync)
+  end
+
+  test "complete! sets approval_status to pending" do
+    log = SyncLog.create!(
+      user: users(:admin), status: "running",
+      from_date: "2026-04-01", to_date: "2026-04-03", started_at: Time.current
+    )
+    log.complete!(accounts_synced: 1, transactions_created: 1, transactions_updated: 0, transactions_skipped: 0)
+    assert_equal "pending", log.approval_status
+  end
+
+  test "approve! sets approval_status and approved_at" do
+    log = sync_logs(:pending_sync)
+    log.approve!
+    log.reload
+    assert_equal "approved", log.approval_status
+    assert_not_nil log.approved_at
+  end
+
+  test "reject! deletes created transactions and unlinks updated ones" do
+    log = sync_logs(:pending_sync)
+    created_tx = transactions(:pending_expense)
+    updated_tx = transactions(:pending_updated_expense)
+
+    log.reject!
+    log.reload
+    assert_equal "rejected", log.approval_status
+    assert_not Transaction.with_deleted.exists?(created_tx.id)
+    assert Transaction.exists?(updated_tx.id)
+    updated_tx.reload
+    assert_nil updated_tx.sync_log_id
+    assert_nil updated_tx.sync_action
   end
 end

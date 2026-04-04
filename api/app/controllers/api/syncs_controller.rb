@@ -19,5 +19,25 @@ module Api
       logs = current_user.sync_logs.recent.limit(20)
       render json: SyncLogSerializer.many(logs)
     end
+
+    def approve
+      sync_log = current_user.sync_logs.find(params[:id])
+      return render json: { error: "Not pending approval" }, status: :unprocessable_entity unless sync_log.pending_approval?
+
+      sync_log.approve!
+      render json: SyncLogSerializer.new(sync_log).as_json
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Sync log not found" }, status: :not_found
+    end
+
+    def reject
+      sync_log = current_user.sync_logs.find(params[:id])
+      return render json: { error: "Not pending approval" }, status: :unprocessable_entity unless sync_log.pending_approval?
+
+      sync_log.reject!
+      render json: SyncLogSerializer.new(sync_log).as_json
+    rescue ActiveRecord::RecordNotFound
+      render json: { error: "Sync log not found" }, status: :not_found
+    end
   end
 end

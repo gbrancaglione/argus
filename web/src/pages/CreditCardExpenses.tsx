@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useCreditCardExpenses } from "../hooks/useCreditCardExpenses";
-import { fetchCreditCardExpenses } from "../api/spending";
+import { useLabels } from "../hooks/useLabels";
+import { useSelection } from "../hooks/useSelection";
+import { fetchCreditCardExpenses, bulkUpdateTransactions } from "../api/spending";
 import { formatBRL } from "../utils/format";
 import type { LocalTransaction } from "../types/spending";
 import SummaryCard from "../components/SummaryCard";
@@ -9,6 +11,7 @@ import TabBar from "../components/TabBar";
 import CategoryList from "../components/CategoryList";
 import CreditCardTransactionRow from "../components/CreditCardTransactionRow";
 import TransactionDetailModal from "../components/TransactionDetailModal";
+import BulkActionBar from "../components/BulkActionBar";
 
 const VIEW_TABS = [
   { key: "transactions", label: "Transações" },
@@ -34,6 +37,8 @@ export default function CreditCardExpenses() {
     removeTransaction,
   } = useCreditCardExpenses();
 
+  const { labels, loadLabels, addLabel } = useLabels();
+  const selection = useSelection(transactions.map((t) => t.id));
   const [selectedTx, setSelectedTx] = useState<LocalTransaction | null>(null);
 
   // Category drill-down state
@@ -43,6 +48,8 @@ export default function CreditCardExpenses() {
   const [catTotalPages, setCatTotalPages] = useState(1);
   const [catTotal, setCatTotal] = useState(0);
   const [catLoading, setCatLoading] = useState(false);
+
+  const catSelection = useSelection(catTransactions.map((t) => t.id));
 
   const loadCategoryTransactions = useCallback(async (
     category: string,
@@ -79,10 +86,12 @@ export default function CreditCardExpenses() {
   function handleBackToCategories() {
     setSelectedCategory(null);
     setCatTransactions([]);
+    catSelection.clearAll();
   }
 
   function handleCatPageChange(newPage: number) {
     if (selectedCategory) {
+      catSelection.clearAll();
       loadCategoryTransactions(selectedCategory, from, to, newPage);
     }
   }
@@ -90,7 +99,9 @@ export default function CreditCardExpenses() {
   // When date range changes, reset category drill-down
   function handleRangeChange(newFrom: string, newTo: string) {
     setRange(newFrom, newTo);
+    selection.clearAll();
     if (selectedCategory) {
+      catSelection.clearAll();
       loadCategoryTransactions(selectedCategory, newFrom, newTo);
     }
   }
@@ -100,11 +111,40 @@ export default function CreditCardExpenses() {
     setViewMode(key as "transactions" | "category");
     setSelectedCategory(null);
     setCatTransactions([]);
+    selection.clearAll();
+    catSelection.clearAll();
+  }
+
+  function handlePageChange(newPage: number) {
+    selection.clearAll();
+    setPage(newPage);
   }
 
   useEffect(() => {
     init();
-  }, [init]);
+    loadLabels();
+  }, [init, loadLabels]);
+
+  async function handleBulkApply(labelId: number | null) {
+    const ids = [...selection.selectedIds];
+    const updated = await bulkUpdateTransactions({ ids, label_id: labelId });
+    for (const tx of updated) {
+      updateTransaction(tx.id, tx);
+    }
+    selection.clearAll();
+  }
+
+  async function handleCatBulkApply(labelId: number | null) {
+    const ids = [...catSelection.selectedIds];
+    const updated = await bulkUpdateTransactions({ ids, label_id: labelId });
+    for (const tx of updated) {
+      updateTransaction(tx.id, tx);
+      setCatTransactions((prev) =>
+        prev.map((t) => (t.id === tx.id ? { ...t, ...tx } : t))
+      );
+    }
+    catSelection.clearAll();
+  }
 
   const displayName = selectedCategory === "uncategorized"
     ? "Sem categoria"
@@ -114,6 +154,9 @@ export default function CreditCardExpenses() {
     (sum, tx) => sum + (tx.amount_brl ?? tx.amount),
     0
   );
+
+  const activeSelection = selectedCategory ? catSelection : selection;
+  const activeBulkApply = selectedCategory ? handleCatBulkApply : handleBulkApply;
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-8">
@@ -194,12 +237,44 @@ export default function CreditCardExpenses() {
                 </p>
               ) : (
                 <div>
+                  {/* Select all */}
+                  <div className="flex items-center gap-2 mb-3">
+                    <div
+                      className="flex items-center cursor-pointer"
+                      onClick={() =>
+                        catSelection.isAllSelected
+                          ? catSelection.clearAll()
+                          : catSelection.selectAll()
+                      }
+                    >
+                      <div
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          catSelection.isAllSelected
+                            ? "bg-brand-primary border-brand-primary"
+                            : "border-neutral-light hover:border-brand-primary"
+                        }`}
+                      >
+                        {catSelection.isAllSelected && (
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="ml-2 text-sm text-neutral-medium">
+                        Selecionar todas ({catTotal})
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="bg-neutral-white rounded-lg shadow-level-1 px-5">
                     {catTransactions.map((tx) => (
                       <CreditCardTransactionRow
                         key={tx.id}
                         transaction={tx}
                         onClick={setSelectedTx}
+                        selectable
+                        selected={catSelection.isSelected(tx.id)}
+                        onToggleSelect={catSelection.toggle}
                       />
                     ))}
                   </div>
@@ -251,12 +326,44 @@ export default function CreditCardExpenses() {
               </p>
             ) : (
               <div>
+                {/* Select all */}
+                <div className="flex items-center gap-2 mb-3">
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() =>
+                      selection.isAllSelected
+                        ? selection.clearAll()
+                        : selection.selectAll()
+                    }
+                  >
+                    <div
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        selection.isAllSelected
+                          ? "bg-brand-primary border-brand-primary"
+                          : "border-neutral-light hover:border-brand-primary"
+                      }`}
+                    >
+                      {selection.isAllSelected && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2.5 6L5 8.5L9.5 3.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="ml-2 text-sm text-neutral-medium">
+                      Selecionar todas
+                    </span>
+                  </div>
+                </div>
+
                 <div className="bg-neutral-white rounded-lg shadow-level-1 px-5">
                   {transactions.map((tx) => (
                     <CreditCardTransactionRow
                       key={tx.id}
                       transaction={tx}
                       onClick={setSelectedTx}
+                      selectable
+                      selected={selection.isSelected(tx.id)}
+                      onToggleSelect={selection.toggle}
                     />
                   ))}
                 </div>
@@ -264,7 +371,7 @@ export default function CreditCardExpenses() {
                 {totalPages > 1 && (
                   <div className="flex items-center justify-center gap-2 mt-4">
                     <button
-                      onClick={() => setPage(page - 1)}
+                      onClick={() => handlePageChange(page - 1)}
                       disabled={page <= 1}
                       className="w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-light text-neutral-dark hover:bg-brand-primary-lightest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
@@ -276,7 +383,7 @@ export default function CreditCardExpenses() {
                       {page} / {totalPages}
                     </span>
                     <button
-                      onClick={() => setPage(page + 1)}
+                      onClick={() => handlePageChange(page + 1)}
                       disabled={page >= totalPages}
                       className="w-10 h-10 flex items-center justify-center rounded-lg border border-neutral-light text-neutral-dark hover:bg-brand-primary-lightest disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
@@ -308,8 +415,19 @@ export default function CreditCardExpenses() {
             removeTransaction(id);
             setCatTransactions((prev) => prev.filter((t) => t.id !== id));
           }}
+          labels={labels}
+          onCreateLabel={addLabel}
         />
       )}
+
+      {/* Bulk action bar */}
+      <BulkActionBar
+        selectedCount={activeSelection.count}
+        onClearSelection={activeSelection.clearAll}
+        onApply={activeBulkApply}
+        labels={labels}
+        onCreateLabel={addLabel}
+      />
     </div>
   );
 }

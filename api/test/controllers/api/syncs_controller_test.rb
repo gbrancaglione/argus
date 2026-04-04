@@ -56,6 +56,69 @@ class Api::SyncsControllerTest < ActionDispatch::IntegrationTest
     assert_response :bad_gateway
   end
 
+  test "sync creates with pending approval status" do
+    OpenFinance.client = mock_client
+
+    post api_syncs_path,
+      params: { from: "2026-03-01", to: "2026-03-31" },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :created
+    body = JSON.parse(response.body)
+    assert_equal "pending", body["approval_status"]
+  end
+
+  test "approve changes approval_status to approved" do
+    sync = sync_logs(:pending_sync)
+
+    patch approve_api_sync_path(sync), headers: @auth_headers, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "approved", body["approval_status"]
+    assert_not_nil body["approved_at"]
+  end
+
+  test "approve returns 422 for already approved sync" do
+    sync = sync_logs(:review_sync)
+
+    patch approve_api_sync_path(sync), headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+  end
+
+  test "approve returns 404 for other user sync" do
+    sync = sync_logs(:other_user_sync)
+
+    patch approve_api_sync_path(sync), headers: @auth_headers, as: :json
+
+    assert_response :not_found
+  end
+
+  test "reject deletes created transactions and unlinks updated ones" do
+    sync = sync_logs(:pending_sync)
+    created_tx_id = transactions(:pending_expense).id
+    updated_tx_id = transactions(:pending_updated_expense).id
+
+    patch reject_api_sync_path(sync), headers: @auth_headers, as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal "rejected", body["approval_status"]
+    assert_not Transaction.with_deleted.exists?(created_tx_id)
+    assert Transaction.exists?(updated_tx_id)
+    assert_nil Transaction.find(updated_tx_id).sync_log_id
+  end
+
+  test "reject returns 422 for non-pending sync" do
+    sync = sync_logs(:review_sync)
+
+    patch reject_api_sync_path(sync), headers: @auth_headers, as: :json
+
+    assert_response :unprocessable_entity
+  end
+
   test "lists recent sync logs" do
     get api_syncs_path, headers: @auth_headers, as: :json
 
