@@ -31,7 +31,7 @@ export default function TransactionDetailModal({
   const [labelId, setLabelId] = useState<string>(
     transaction.label_id != null ? String(transaction.label_id) : ""
   );
-  const [labels, setLabels] = useState<Label[]>([]);
+  const [labels, setLabels] = useState<Label[]>(externalLabels ?? []);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -45,9 +45,7 @@ export default function TransactionDetailModal({
     labelId !== (transaction.label_id != null ? String(transaction.label_id) : "");
 
   useEffect(() => {
-    if (externalLabels) {
-      setLabels(externalLabels);
-    } else {
+    if (!externalLabels) {
       fetchLabels().then(setLabels);
     }
   }, [externalLabels]);
