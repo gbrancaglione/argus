@@ -5,6 +5,7 @@ import SyncPage from "./pages/SyncPage";
 import CreditCardExpenses from "./pages/CreditCardExpenses";
 import CategoryTransactions from "./pages/CategoryTransactions";
 import Analytics from "./pages/Analytics";
+import SyncReviewPage from "./pages/SyncReviewPage";
 import AppLayout from "./components/AppLayout";
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
         <Route path="/sync" element={<SyncPage />} />
+        <Route path="/sync/:syncId/review" element={<SyncReviewPage />} />
         <Route path="/credit-card" element={<CreditCardExpenses />} />
         <Route path="/credit-card/category/:categoryName" element={<CategoryTransactions />} />
         <Route path="/analytics" element={<Analytics />} />

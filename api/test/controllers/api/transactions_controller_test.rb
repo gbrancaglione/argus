@@ -212,6 +212,94 @@ class Api::TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_equal tx.label.name, body["category"]
   end
 
+  # — PATCH bulk_update tests —
+
+  test "bulk_update changes label on multiple transactions" do
+    new_label = users(:admin).labels.create!(name: "Mercado")
+    tx1 = transactions(:grocery_expense)
+    tx2 = transactions(:restaurant_expense)
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [tx1.id, tx2.id], label_id: new_label.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert_equal 2, body.length
+    assert body.all? { |tx| tx["category"] == "Mercado" }
+    assert body.all? { |tx| tx["category_edited"] == true }
+    assert_equal new_label.id, tx1.reload.label_id
+    assert_equal new_label.id, tx2.reload.label_id
+  end
+
+  test "bulk_update clears label when label_id is nil" do
+    tx1 = transactions(:grocery_expense)
+    tx2 = transactions(:foreign_expense)
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [tx1.id, tx2.id], label_id: nil },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    assert body.all? { |tx| tx["label_id"].nil? }
+    assert body.all? { |tx| tx["category_edited"] == true }
+  end
+
+  test "bulk_update returns 404 for label belonging to other user" do
+    other_label = users(:other).labels.create!(name: "Other label")
+    tx = transactions(:grocery_expense)
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [tx.id], label_id: other_label.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :not_found
+  end
+
+  test "bulk_update returns 400 when no IDs provided" do
+    new_label = users(:admin).labels.create!(name: "Test")
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [], label_id: new_label.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :bad_request
+  end
+
+  test "bulk_update returns 400 when no updates provided" do
+    tx = transactions(:grocery_expense)
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [tx.id] },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :bad_request
+  end
+
+  test "bulk_update does not modify other user transactions" do
+    new_label = users(:admin).labels.create!(name: "Mercado")
+    other_tx = transactions(:other_user_tx)
+    own_tx = transactions(:grocery_expense)
+
+    patch bulk_update_api_transactions_path,
+      params: { ids: [own_tx.id, other_tx.id], label_id: new_label.id },
+      headers: @auth_headers,
+      as: :json
+
+    assert_response :success
+    body = JSON.parse(response.body)
+    # Only own transaction should be updated
+    assert_equal 1, body.length
+    assert_equal new_label.id, own_tx.reload.label_id
+    assert_not_equal new_label.id, other_tx.reload.label_id
+  end
+
   # — DELETE soft-delete tests —
 
   test "destroy soft-deletes a transaction" do

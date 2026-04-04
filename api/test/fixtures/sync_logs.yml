@@ -7,8 +7,51 @@ completed_sync:
   transactions_created: 10
   transactions_updated: 0
   transactions_skipped: 5
+  approval_status: "approved"
+  approved_at: "2026-03-31 10:01:00"
   started_at: "2026-03-31 10:00:00"
   finished_at: "2026-03-31 10:01:00"
+
+review_sync:
+  user: admin
+  status: "completed"
+  from_date: "2026-03-01"
+  to_date: "2026-03-31"
+  accounts_synced: 1
+  transactions_created: 2
+  transactions_updated: 1
+  transactions_skipped: 0
+  approval_status: "approved"
+  approved_at: "2026-04-01 10:01:00"
+  started_at: "2026-04-01 10:00:00"
+  finished_at: "2026-04-01 10:01:00"
+
+pending_sync:
+  user: admin
+  status: "completed"
+  from_date: "2026-04-01"
+  to_date: "2026-04-03"
+  accounts_synced: 1
+  transactions_created: 1
+  transactions_updated: 0
+  transactions_skipped: 0
+  approval_status: "pending"
+  started_at: "2026-04-03 10:00:00"
+  finished_at: "2026-04-03 10:01:00"
+
+other_user_sync:
+  user: other
+  status: "completed"
+  from_date: "2026-03-01"
+  to_date: "2026-03-31"
+  accounts_synced: 1
+  transactions_created: 1
+  transactions_updated: 0
+  transactions_skipped: 0
+  approval_status: "approved"
+  approved_at: "2026-04-01 11:01:00"
+  started_at: "2026-04-01 11:00:00"
+  finished_at: "2026-04-01 11:01:00"
 
 failed_sync:
   user: admin
@@ -19,6 +62,7 @@ failed_sync:
   transactions_created: 0
   transactions_updated: 0
   transactions_skipped: 0
+  approval_status: "pending"
   error_message: "Connection timed out"
   started_at: "2026-02-28 10:00:00"
   finished_at: "2026-02-28 10:00:30"

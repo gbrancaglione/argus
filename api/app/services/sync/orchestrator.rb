@@ -27,7 +27,7 @@ module Sync
         }
 
         accounts.each do |account|
-          stats = TransactionIngester.new(account, from: @from, to: @to).call
+          stats = TransactionIngester.new(account, from: @from, to: @to, sync_log: log).call
           totals[:transactions_created] += stats[:created]
           totals[:transactions_updated] += stats[:updated]
           totals[:transactions_skipped] += stats[:skipped]

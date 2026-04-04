@@ -125,6 +125,40 @@ export function createLabel(name: string) {
   });
 }
 
+export function fetchSyncTransactions(params: {
+  syncId: number;
+  syncAction?: "created" | "updated";
+  page?: number;
+  perPage?: number;
+}) {
+  const query = new URLSearchParams({
+    page: String(params.page ?? 1),
+    per_page: String(params.perPage ?? 50),
+  });
+  if (params.syncAction) query.set("sync_action", params.syncAction);
+  return apiRequest<LocalTransactionsResponse>(
+    `/syncs/${params.syncId}/transactions?${query}`
+  );
+}
+
+export function approveSync(syncId: number) {
+  return apiRequest<SyncLog>(`/syncs/${syncId}/approve`, { method: "PATCH" });
+}
+
+export function rejectSync(syncId: number) {
+  return apiRequest<SyncLog>(`/syncs/${syncId}/reject`, { method: "PATCH" });
+}
+
+export function bulkUpdateTransactions(params: {
+  ids: number[];
+  label_id: number | null;
+}) {
+  return apiRequest<LocalTransaction[]>("/transactions/bulk_update", {
+    method: "PATCH",
+    body: params,
+  });
+}
+
 export function updateTransaction(
   id: number,
   updates: { label_id?: number | null; description?: string }

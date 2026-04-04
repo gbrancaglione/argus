@@ -4,11 +4,17 @@ import { formatBRL } from "../utils/format";
 type CreditCardTransactionRowProps = {
   transaction: LocalTransaction;
   onClick: (transaction: LocalTransaction) => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (id: number) => void;
 };
 
 export default function CreditCardTransactionRow({
   transaction,
   onClick,
+  selectable,
+  selected,
+  onToggleSelect,
 }: CreditCardTransactionRowProps) {
   const isExpense = transaction.amount > 0;
   const isForeign = transaction.currency_code !== "BRL";
@@ -18,8 +24,39 @@ export default function CreditCardTransactionRow({
     <button
       type="button"
       onClick={() => onClick(transaction)}
-      className="w-full flex items-center justify-between py-3 border-b border-neutral-lightest last:border-b-0 cursor-pointer hover:bg-neutral-bg transition-colors text-left -mx-5 px-5"
+      className={`w-full flex items-center justify-between py-3 border-b border-neutral-lightest last:border-b-0 cursor-pointer hover:bg-neutral-bg transition-colors text-left -mx-5 px-5 ${
+        selected ? "bg-brand-primary-lightest/50" : ""
+      }`}
     >
+      {selectable && (
+        <div
+          className="flex items-center mr-3 flex-shrink-0"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.(transaction.id);
+          }}
+        >
+          <div
+            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+              selected
+                ? "bg-brand-primary border-brand-primary"
+                : "border-neutral-light hover:border-brand-primary"
+            }`}
+          >
+            {selected && (
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path
+                  d="M2.5 6L5 8.5L9.5 3.5"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-1 min-w-0 flex-1">
         <span className="text-sm font-bold text-neutral-darkest truncate">
           {transaction.description}

@@ -14,6 +14,7 @@ type InputSelectProps = {
   optional?: boolean;
   onCreateNew?: (name: string) => Promise<Option>;
   createNewLabel?: string;
+  dropUp?: boolean;
 };
 
 export default function InputSelect({
@@ -25,6 +26,7 @@ export default function InputSelect({
   optional,
   onCreateNew,
   createNewLabel = "Criar nova categoria...",
+  dropUp,
 }: InputSelectProps) {
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -126,7 +128,7 @@ export default function InputSelect({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute z-50 w-full mt-1 bg-neutral-white rounded-lg shadow-level-3 p-4 max-h-64 overflow-y-auto">
+        <div className={`absolute z-50 w-full bg-neutral-white rounded-lg shadow-level-3 p-4 max-h-64 overflow-y-auto ${dropUp ? "bottom-full mb-1" : "mt-1"}`}>
           {/* Options */}
           <div className="flex flex-col gap-1">
             {/* Empty option */}

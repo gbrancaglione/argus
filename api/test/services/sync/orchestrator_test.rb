@@ -52,6 +52,15 @@ class Sync::OrchestratorTest < ActiveSupport::TestCase
     assert_not_nil log.finished_at
   end
 
+  test "links transactions to sync log" do
+    OpenFinance.client = mock_full_client
+
+    log = Sync::Orchestrator.new(@user, from: "2026-03-01", to: "2026-03-31").call
+
+    assert_equal 2, log.transactions.count
+    assert log.transactions.all? { |tx| tx.sync_action == "created" }
+  end
+
   test "creates sync log with running status initially" do
     OpenFinance.client = mock_full_client
     Sync::Orchestrator.new(@user, from: "2026-03-01", to: "2026-03-31").call

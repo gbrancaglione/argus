@@ -39,6 +39,7 @@ export type LocalTransaction = {
   transaction_type: "DEBIT" | "CREDIT";
   status: string;
   account_id: number;
+  sync_action?: "created" | "updated" | null;
 };
 
 export type TransactionsResponse = {
@@ -87,6 +88,8 @@ export type SyncLog = {
   transactions_updated: number;
   transactions_skipped: number;
   error_message: string | null;
+  approval_status: "pending" | "approved" | "rejected" | null;
+  approved_at: string | null;
   started_at: string;
   finished_at: string | null;
 };

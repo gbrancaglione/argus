@@ -213,6 +213,24 @@ class TransactionTest < ActiveSupport::TestCase
     assert_equal 2, Transaction.where(purchase_key: key, status: "PROJECTED").count
   end
 
+  test "visible scope excludes transactions from pending syncs" do
+    visible = users(:admin).transactions.visible
+    assert_not_includes visible, transactions(:pending_expense)
+    assert_includes visible, transactions(:grocery_expense)
+  end
+
+  test "visible scope includes transactions with no sync_log" do
+    tx = transactions(:uncategorized_expense)
+    assert_nil tx.sync_log_id
+    assert_includes Transaction.visible, tx
+  end
+
+  test "visible scope includes transactions from approved syncs" do
+    tx = transactions(:grocery_expense)
+    assert_equal "approved", tx.sync_log.approval_status
+    assert_includes Transaction.visible, tx
+  end
+
   test "project_future_installments! skips when already at last installment" do
     account = accounts(:santander_credit)
     key = Transaction.generate_purchase_key(account_id: account.id, purchase_date: "2026-01-10", amount: 75.0)

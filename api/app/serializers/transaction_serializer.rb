@@ -18,7 +18,8 @@ class TransactionSerializer
       original_category: @transaction.original_category,
       transaction_type: @transaction.transaction_type,
       status: @transaction.status,
-      account_id: @transaction.account_id
+      account_id: @transaction.account_id,
+      sync_action: @transaction.sync_action
     }
   end
 

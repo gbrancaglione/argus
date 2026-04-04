@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_04_011241) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,6 +42,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
 
   create_table "sync_logs", force: :cascade do |t|
     t.integer "accounts_synced", default: 0
+    t.string "approval_status", default: "pending", null: false
+    t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.text "error_message"
     t.datetime "finished_at"
@@ -77,6 +79,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
     t.string "purchase_key"
     t.jsonb "raw_data", default: {}
     t.string "status"
+    t.string "sync_action"
+    t.bigint "sync_log_id"
     t.integer "total_installments"
     t.string "transaction_type", null: false
     t.datetime "updated_at", null: false
@@ -87,6 +91,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
     t.index ["external_id"], name: "index_transactions_on_external_id", unique: true
     t.index ["label_id"], name: "index_transactions_on_label_id"
     t.index ["purchase_key"], name: "index_transactions_on_purchase_key"
+    t.index ["sync_log_id", "sync_action"], name: "index_transactions_on_sync_log_id_and_sync_action"
+    t.index ["sync_log_id"], name: "index_transactions_on_sync_log_id"
   end
 
   create_table "users", force: :cascade do |t|
@@ -102,4 +108,5 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_03_222155) do
   add_foreign_key "sync_logs", "users"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "labels"
+  add_foreign_key "transactions", "sync_logs"
 end

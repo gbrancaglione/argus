@@ -14,6 +14,8 @@ class SyncLogSerializer
       transactions_updated: @sync_log.transactions_updated,
       transactions_skipped: @sync_log.transactions_skipped,
       error_message: @sync_log.error_message,
+      approval_status: @sync_log.approval_status,
+      approved_at: @sync_log.approved_at,
       started_at: @sync_log.started_at,
       finished_at: @sync_log.finished_at
     }

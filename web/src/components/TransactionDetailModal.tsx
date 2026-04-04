@@ -15,6 +15,8 @@ type TransactionDetailModalProps = {
   onClose: () => void;
   onUpdate: (id: number, updates: Partial<LocalTransaction>) => void;
   onDelete: (id: number) => void;
+  labels?: Label[];
+  onCreateLabel?: (name: string) => Promise<Label>;
 };
 
 export default function TransactionDetailModal({
@@ -22,6 +24,8 @@ export default function TransactionDetailModal({
   onClose,
   onUpdate,
   onDelete,
+  labels: externalLabels,
+  onCreateLabel: externalCreateLabel,
 }: TransactionDetailModalProps) {
   const [description, setDescription] = useState(transaction.description ?? "");
   const [labelId, setLabelId] = useState<string>(
@@ -41,8 +45,12 @@ export default function TransactionDetailModal({
     labelId !== (transaction.label_id != null ? String(transaction.label_id) : "");
 
   useEffect(() => {
-    fetchLabels().then(setLabels);
-  }, []);
+    if (externalLabels) {
+      setLabels(externalLabels);
+    } else {
+      fetchLabels().then(setLabels);
+    }
+  }, [externalLabels]);
 
   useEffect(() => {
     function handleEscape(e: KeyboardEvent) {
@@ -57,7 +65,9 @@ export default function TransactionDetailModal({
   }
 
   async function handleCreateLabel(name: string) {
-    const label = await createLabel(name);
+    const label = externalCreateLabel
+      ? await externalCreateLabel(name)
+      : await createLabel(name);
     setLabels((prev) => [...prev, label].sort((a, b) => a.name.localeCompare(b.name)));
     return { value: String(label.id), label: label.name };
   }
