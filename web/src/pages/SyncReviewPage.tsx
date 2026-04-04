@@ -24,6 +24,7 @@ export default function SyncReviewPage() {
 
   const {
     syncLog,
+    setSyncLog,
     transactions,
     actionFilter,
     page,
