@@ -155,6 +155,23 @@ pending_expense:
   sync_action: "created"
   raw_data: {}
 
+pending_updated_expense:
+  account: santander_credit
+  external_id: "tx-pending-updated-1"
+  date: "2026-04-01"
+  amount: 150.00
+  amount_brl: 150.00
+  currency_code: "BRL"
+  description: "Updated Store"
+  original_category: "Shopping"
+  label: shopping
+  category_edited: false
+  transaction_type: "DEBIT"
+  status: "POSTED"
+  sync_log: pending_sync
+  sync_action: "updated"
+  raw_data: {}
+
 other_user_tx:
   account: other_user_credit
   external_id: "tx-5"

@@ -77,14 +77,18 @@ class SyncLogTest < ActiveSupport::TestCase
     assert_not_nil log.approved_at
   end
 
-  test "reject! hard-deletes transactions and sets rejected" do
+  test "reject! deletes created transactions and unlinks updated ones" do
     log = sync_logs(:pending_sync)
-    tx_count_before = Transaction.with_deleted.where(sync_log: log).count
-    assert tx_count_before > 0
+    created_tx = transactions(:pending_expense)
+    updated_tx = transactions(:pending_updated_expense)
 
     log.reject!
     log.reload
     assert_equal "rejected", log.approval_status
-    assert_equal 0, Transaction.with_deleted.where(sync_log: log).count
+    assert_not Transaction.with_deleted.exists?(created_tx.id)
+    assert Transaction.exists?(updated_tx.id)
+    updated_tx.reload
+    assert_nil updated_tx.sync_log_id
+    assert_nil updated_tx.sync_action
   end
 end

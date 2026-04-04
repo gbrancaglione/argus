@@ -28,7 +28,8 @@ class SyncLog < ApplicationRecord
   end
 
   def reject!
-    Transaction.unscoped.where(sync_log_id: id).delete_all
+    Transaction.unscoped.where(sync_log_id: id, sync_action: "created").delete_all
+    Transaction.unscoped.where(sync_log_id: id, sync_action: "updated").update_all(sync_log_id: nil, sync_action: nil)
     update!(approval_status: "rejected")
   end
 

@@ -33,7 +33,7 @@ pending_sync:
   to_date: "2026-04-03"
   accounts_synced: 1
   transactions_created: 1
-  transactions_updated: 0
+  transactions_updated: 1
   transactions_skipped: 0
   approval_status: "pending"
   started_at: "2026-04-03 10:00:00"

@@ -96,16 +96,19 @@ class Api::SyncsControllerTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "reject hard-deletes transactions and sets rejected" do
+  test "reject deletes created transactions and unlinks updated ones" do
     sync = sync_logs(:pending_sync)
-    tx_id = transactions(:pending_expense).id
+    created_tx_id = transactions(:pending_expense).id
+    updated_tx_id = transactions(:pending_updated_expense).id
 
     patch reject_api_sync_path(sync), headers: @auth_headers, as: :json
 
     assert_response :success
     body = JSON.parse(response.body)
     assert_equal "rejected", body["approval_status"]
-    assert_not Transaction.with_deleted.exists?(tx_id)
+    assert_not Transaction.with_deleted.exists?(created_tx_id)
+    assert Transaction.exists?(updated_tx_id)
+    assert_nil Transaction.find(updated_tx_id).sync_log_id
   end
 
   test "reject returns 422 for non-pending sync" do

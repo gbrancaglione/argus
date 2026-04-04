@@ -48,7 +48,7 @@ module Api
       return render json: { error: "No updates provided" }, status: :bad_request if updates.empty?
 
       transactions = current_user.transactions.where(id: ids)
-      transactions.update_all(updates)
+      transactions.update_all(updates.merge(updated_at: Time.current))
 
       render json: TransactionSerializer.many(transactions.reload.includes(:label))
     rescue ActiveRecord::RecordNotFound => e

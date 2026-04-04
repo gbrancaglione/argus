@@ -23,6 +23,7 @@ class Transaction < ApplicationRecord
   scope :not_projected, -> { where.not(status: "PROJECTED") }
   scope :visible, -> {
     where(sync_log_id: nil)
+      .or(where(sync_action: "updated"))
       .or(where.not(sync_log_id: SyncLog.pending_approval))
   }
 

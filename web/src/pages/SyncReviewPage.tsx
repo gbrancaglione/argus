@@ -54,8 +54,7 @@ export default function SyncReviewPage() {
   // Reset selection on filter/page change
   useEffect(() => {
     selection.clearAll();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [actionFilter, page]);
+  }, [actionFilter, page, selection.clearAll]);
 
   function handleTabChange(key: string) {
     changeFilter(key as "all" | "created" | "updated");
