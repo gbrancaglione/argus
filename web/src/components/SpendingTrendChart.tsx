@@ -3,11 +3,13 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
 } from "recharts";
 import { formatBRL } from "../utils/format";
 
@@ -52,6 +54,7 @@ type SpendingTrendChartProps = {
   categoryTrend: Record<string, Record<string, number>>;
   monthlyTotals: Record<string, number>;
   selectedMonth?: string | null;
+  currentPeriod?: string;
   onMonthClick?: (month: string) => void;
 };
 
@@ -115,8 +118,10 @@ export default function SpendingTrendChart({
   categoryTrend,
   monthlyTotals,
   selectedMonth,
+  currentPeriod,
   onMonthClick,
 }: SpendingTrendChartProps) {
+  const hasProjected = currentPeriod && months.some((m) => m > currentPeriod);
   if (months.length === 0) {
     return (
       <p className="text-neutral-medium text-sm py-8 text-center">
@@ -180,7 +185,20 @@ export default function SpendingTrendChart({
           width={90}
         />
         <Tooltip content={<CustomTooltip />} />
-        <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+        <Legend
+          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+          formatter={(value: string) => (
+            <span style={{ color: "#444152" }}>{value}</span>
+          )}
+        />
+        {hasProjected && (
+          <ReferenceLine
+            x={currentPeriod}
+            stroke="#79778C"
+            strokeDasharray="4 4"
+            strokeWidth={1.5}
+          />
+        )}
         {displayCats.map((cat, i) => (
           <Bar
             key={cat}
@@ -195,7 +213,15 @@ export default function SpendingTrendChart({
                 onMonthClick(String(d.month));
               }
             }}
-          />
+          >
+            {currentPeriod &&
+              chartData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fillOpacity={String(entry.month) > currentPeriod ? 0.4 : 1}
+                />
+              ))}
+          </Bar>
         ))}
       </BarChart>
     </ResponsiveContainer>

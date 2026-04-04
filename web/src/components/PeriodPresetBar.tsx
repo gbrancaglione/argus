@@ -20,7 +20,9 @@ function buildPresets(): Preset[] {
     { label: "Mês passado", from: fmt(firstOfMonth(y, m - 1)), to: fmt(lastOfMonth(y, m - 1)) },
     { label: "Últimos 3 meses", from: fmt(firstOfMonth(y, m - 2)), to: fmt(lastOfMonth(y, m)) },
     { label: "Últimos 6 meses", from: fmt(firstOfMonth(y, m - 5)), to: fmt(lastOfMonth(y, m)) },
-    { label: "Este ano", from: fmt(firstOfMonth(y, 0)), to: fmt(lastOfMonth(y, m)) },
+    { label: "Próx. 3 meses", from: fmt(firstOfMonth(y, m)), to: fmt(lastOfMonth(y, m + 2)) },
+    { label: "6 meses + projeções", from: fmt(firstOfMonth(y, m - 5)), to: fmt(lastOfMonth(y, m + 2)) },
+    { label: "Este ano", from: fmt(firstOfMonth(y, 0)), to: fmt(lastOfMonth(y, 11)) },
   ];
 }
 

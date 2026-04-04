@@ -27,9 +27,10 @@ function formatPeriodLabel(key: string): string {
 
 type MonthOverMonthTableProps = {
   data: Record<string, PeriodSummary>;
+  currentPeriod?: string;
 };
 
-export default function MonthOverMonthTable({ data }: MonthOverMonthTableProps) {
+export default function MonthOverMonthTable({ data, currentPeriod }: MonthOverMonthTableProps) {
   const keys = Object.keys(data).sort();
 
   if (keys.length === 0) {
@@ -64,12 +65,24 @@ export default function MonthOverMonthTable({ data }: MonthOverMonthTableProps) 
             <tr key={row.key} className="border-b border-neutral-lightest last:border-0">
               <td className="py-2 pr-3 text-neutral-darkest font-bold">
                 {formatPeriodLabel(row.key)}
+                {currentPeriod && row.key === currentPeriod && (
+                  <span className="ml-1.5 text-[10px] font-bold text-neutral-dark bg-neutral-lightest px-1.5 py-0.5 rounded-full align-middle">
+                    atual
+                  </span>
+                )}
+                {currentPeriod && row.key > currentPeriod && (
+                  <span className="ml-1.5 text-[10px] font-bold text-brand-primary bg-brand-primary-lightest px-1.5 py-0.5 rounded-full align-middle">
+                    projeção
+                  </span>
+                )}
               </td>
               <td className="py-2 px-3 text-right text-neutral-darkest">
                 {formatBRL(row.spent)}
               </td>
               <td className="py-2 pl-3 text-right">
-                {row.delta !== null ? (
+                {currentPeriod && row.key > currentPeriod ? (
+                  <span className="text-neutral-medium">—</span>
+                ) : row.delta !== null ? (
                   <span className={`font-bold ${row.delta > 0 ? "text-status-error" : row.delta < 0 ? "text-status-success" : "text-neutral-medium"}`}>
                     {row.delta > 0 ? "+" : ""}
                     {row.deltaPct !== null ? `${row.deltaPct.toFixed(1)}%` : "—"}
